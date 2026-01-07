@@ -15,10 +15,10 @@ analysis, and results.
 .
 ├── data/
 ├── notebooks/
-│ ├── 02_model_setup.ipynb
-│ ├── 03_simulation.ipynb
-│ ├── 04_analysis.ipynb
-│ └── 05_results.ipynb
+│ ├── 01_model_setup.ipynb
+│ ├── 02_simulation.ipynb
+│ ├── 03_analysis.ipynb
+│ └── 04_results.ipynb
 ├── results/images
 ├── requirements.txt
 └── README.md
