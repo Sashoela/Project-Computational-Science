@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 # import our own functions
 from agent_class import Agent
+
 class Simulation():
     def __init__(self, N_birds, nearest_x):
         # needed variables
@@ -50,6 +51,7 @@ class Simulation():
     def dump():
         return
     
+
 
 sim = Simulation(100, 7)
 sim.show()
