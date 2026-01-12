@@ -2,12 +2,10 @@
 import math
 import random
 import numpy as np
-#for 3d plot
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 # import our own functions
 from agent_class import Agent
-
 class Simulation():
     def __init__(self, N_birds, nearest_x):
         # needed variables
@@ -26,7 +24,16 @@ class Simulation():
             agent.setup(random.uniform(40, 60), random.uniform(40, 60), random.uniform(40, 60), unit_v[0], unit_v[1], unit_v[2])
 
     def step(self):
-        return
+        i, j, k,ids = [], [], []
+        for agent in self.agents:
+            x, y, z, vx, vy, vz, d = agent.output_last()
+            i.append(x)
+            j.append(y)
+            k.append(z)
+            ids.append(d)
+
+        ids = nearest_x_ids(i,j,k,ids,near_x,initial_bird)
+
     def show(self):
         i, j, k = [], [], []
         for agent in self.agents:
@@ -52,6 +59,23 @@ class Simulation():
         return
     
 
+    def nearest_x_ids(i, j, k, ids, near_x, initial_bird):
+        n = initial_bird
+        nr = len(i)
+        items = []  # (distance, id)
+        
+        for m in range(nr):
+            if m == n:
+                continue
+            d = np.sqrt(
+                (i[n] - i[m])**2 +
+                (j[n] - j[m])**2 +
+                (k[n] - k[m])**2
+            )
+            items.append((d, ids[m]))
+        smallest_near_x = sorted(items, key=lambda x: x[0])[:near_x]
+
+        return [id_ for _, id_ in smallest_near_x]
 
 sim = Simulation(100, 7)
 sim.show()
