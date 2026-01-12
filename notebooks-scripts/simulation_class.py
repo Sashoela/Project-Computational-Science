@@ -2,6 +2,7 @@
 import math
 import random
 import numpy as np
+#for 3d plot
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 # import our own functions

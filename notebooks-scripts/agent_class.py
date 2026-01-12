@@ -31,6 +31,9 @@ class Agent():
         # output all values to compute with
         return self.last_x, self.last_y, self.last_z, self.last_vx, self.last_vy, self.last_vz, self.id
     
+    def get_id(self):
+        return self.id
+    
     def set_current(self, x, y, z, vx, vy ,vz):
         # save new data, made permanent in current_to_last
         self.current_x = x
