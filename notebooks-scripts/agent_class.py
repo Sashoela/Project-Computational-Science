@@ -53,7 +53,7 @@ class Agent():
         self.last_vx = self.current_vz
 
 
-
+# predator class which just saves a location and has tools to update this
 class Predator():
     def __init__(self):
         self.x = 0
