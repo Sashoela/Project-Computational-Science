@@ -1,4 +1,4 @@
-class agent():
+class Agent():
     def __init__(self, id):
         self.id = id
         # all variables for speed and location 
@@ -29,7 +29,7 @@ class agent():
 
     def output_last(self):
         # output all values to compute with
-        return self.last_x, self.last_y, self.last_z, self.last_vx, self.last_vy, self.last_vz
+        return self.last_x, self.last_y, self.last_z, self.last_vx, self.last_vy, self.last_vz, self.id
     
     def set_current(self, x, y, z, vx, vy ,vz):
         # save new data, made permanent in current_to_last
