@@ -1,2 +1,46 @@
-class agent(x, y, z, vx, vy, vz):
+class agent():
+    def __init__(self):
+        # all variables for speed and location 
+        self.last_x = 0
+        self.last_y = 0
+        self.last_z = 0
+
+        self.current_x = 0
+        self.current_y = 0
+        self.current_z = 0
+
+        self.last_vx = 0
+        self.last_vy = 0
+        self.last_vz = 0
+
+        self.current_vx = 0
+        self.current_vy = 0
+        self.current_vz = 0
+
+    def setup(self, x, y, z, vx, vy, vz):
+        # function to call when initializing model with random values
+        self.last_x = x
+        self.last_y = y
+        self.last_z = z
+        self.last_vx = vx
+        self.last_vy = vy
+        self.last_vz = vz
+
+    def output_last(self):
+        return self.last_x, self.last_y, self.last_z, self.last_vx, self.last_vy, self.last_vz
     
+    def set_current(self, x, y, z, vx, vy ,vz):
+        self.current_x = x
+        self.current_y = y
+        self.current_z = z
+        self.current_vx = vx
+        self.current_vy = vy
+        self.current_vz = vz
+
+    def current_to_last(self):
+        self.last_x = self.current_x
+        self.last_y = self.current_y
+        self.last_x = self.current_z
+        self.last_vx = self.current_vx
+        self.last_vy = self.current_vy
+        self.last_vx = self.current_vz
