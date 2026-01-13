@@ -20,11 +20,11 @@ class Simulation():
         # initialize birds in a list
         self.agents = [Agent(i) for i in range(N_birds)]
 
-        #random normalized speed
-        v = np.random.normal(size=3)
-        unit_v = v / np.linalg.norm(v)
         # give random location and speed
         for agent in self.agents:
+            #random normalized speed
+            v = np.random.normal(size=3)
+            unit_v = v / np.linalg.norm(v)
             agent.setup(random.uniform(40, 60), random.uniform(40, 60), random.uniform(40, 60), unit_v[0], unit_v[1], unit_v[2])
 
     def step(self):
@@ -45,14 +45,18 @@ class Simulation():
             nearest_ids = self.nearest_x_ids(i,j,k,ids,self.nearest_x,id)
 
             # three components of speed vector: location, direction, noise ; n = neighbour
-            total_loc_vector = np.array([0, 0, 0]) #x, y, z
-            total_direction_vector = np.array([0, 0, 0]) #x, y, z
+            total_loc_vector = np.array([0, 0, 0], dtype=np.float64) #x, y, z
+            total_direction_vector = np.array([0, 0, 0], dtype=np.float64) #x, y, z
             for id in nearest_ids:
                 nx, ny, nz, nvx, nvy, nvz, nid = self.agents[id].output_last()
-                total_loc_vector += [nx - x, ny - y, nz - z]
-                total_loc_vector += [nvx, nvy, nvz]
-            loc_vec = x / self.nearest_x
-            direction_vec = x / self.nearest_x
+                total_loc_vector[0] += nx - x
+                total_loc_vector[1] += ny - y
+                total_loc_vector[2] += nz - z
+                total_direction_vector[0] += nvx
+                total_direction_vector[1] += nvy
+                total_direction_vector[2] += nvz
+            loc_vec = total_loc_vector / self.nearest_x
+            direction_vec = total_direction_vector / self.nearest_x
 
             # these vectors need to be normalised and given their required scale afctor
             scaled_loc_vec = (loc_vec / np.linalg.norm(loc_vec)) * self.loc_vector_scale 
@@ -63,7 +67,7 @@ class Simulation():
 
             #total movement :
             total_vec = scaled_loc_vec + scaled_dir_vec + scaled_noise
-
+            #print(total_vec, type(total_vec[0]))
             ##### all other influences on movement (wall and wind)
             wall = np.array(wall_vec(x, y, z, 5))
 
@@ -123,6 +127,8 @@ class Simulation():
 
         return [id_ for _, id_ in smallest_near_x]
 
+# test code
 sim = Simulation(100, 7, 0.45, 0.45, 0.1)
-sim.step()
-sim.show()
+for i in range(100):
+    sim.step()
+    sim.show()
