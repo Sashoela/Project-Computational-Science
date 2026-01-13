@@ -47,10 +47,10 @@ class Agent():
         # save "new" data to "old" data
         self.last_x = self.current_x
         self.last_y = self.current_y
-        self.last_x = self.current_z
+        self.last_z = self.current_z
         self.last_vx = self.current_vx
         self.last_vy = self.current_vy
-        self.last_vx = self.current_vz
+        self.last_vz = self.current_vz
 
 
 # predator class which just saves a location and has tools to update this
