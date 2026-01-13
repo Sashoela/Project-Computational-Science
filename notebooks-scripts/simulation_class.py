@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 # import our own functions
-from agent_class import Agent
+from agent_class import Agent, Predator
 class Simulation():
     def __init__(self, N_birds, nearest_x):
         # needed variables
@@ -24,7 +24,8 @@ class Simulation():
             agent.setup(random.uniform(40, 60), random.uniform(40, 60), random.uniform(40, 60), unit_v[0], unit_v[1], unit_v[2])
 
     def step(self):
-        i, j, k,ids = [], [], []
+        # variables used to find nearest birds
+        i, j, k, ids = [], [], [], []
         for agent in self.agents:
             x, y, z, vx, vy, vz, d = agent.output_last()
             i.append(x)
@@ -32,12 +33,23 @@ class Simulation():
             k.append(z)
             ids.append(d)
 
-        ids = nearest_x_ids(i,j,k,ids,near_x,initial_bird)
+        # make a loop to update all agents (loop over all birds)
+        for agent in self.agents:
+            # data of current bird
+            x, y, z, vx, vy, vz, id = agent.output_last()
+            #find nearest birds
+            nearest_ids = self.nearest_x_ids(i,j,k,ids,self.nearest_x,id)
+
+            # three components of speed vector: location, direction, noise ; n = neighbour
+            total_loc_vector = [0, 0, 0] #x, y, z
+            total_direction_vector = [0, 0, 0] #x, y, z
+            for id in nearest_ids:
+                nx, ny, nz, nvx, nvy, nvz, nid = self.agents[id].output_last()
 
     def show(self):
         i, j, k = [], [], []
         for agent in self.agents:
-            x, y, z, vx, vy, vz = agent.output_last()
+            x, y, z, vx, vy, vz, id = agent.output_last()
             i.append(x)
             j.append(y)
             k.append(z)
