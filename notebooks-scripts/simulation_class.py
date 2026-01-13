@@ -41,6 +41,7 @@ class Simulation():
         for agent in self.agents:
             # data of current bird
             x, y, z, vx, vy, vz, id = agent.output_last()
+
             #find nearest birds
             nearest_ids = self.nearest_x_ids(i,j,k,ids,self.nearest_x,id)
 
@@ -59,20 +60,17 @@ class Simulation():
             direction_vec = total_direction_vector / self.nearest_x
 
             # these vectors need to be normalised and given their required scale afctor
-            scaled_loc_vec = (loc_vec / np.linalg.norm(loc_vec)) * self.loc_vector_scale 
+            scaled_loc_vec = (loc_vec / np.linalg.norm(loc_vec)) * self.loc_vector_scale
             scaled_dir_vec = (direction_vec / np.linalg.norm(direction_vec)) * self.dir_vector_scale
             # noise vector
             noise = np.random.normal(size=3)
             scaled_noise = noise / np.linalg.norm(noise) * self.noise_vector_scale
-
             #total movement :
             total_vec = scaled_loc_vec + scaled_dir_vec + scaled_noise
-            #print(total_vec, type(total_vec[0]))
             ##### all other influences on movement (wall and wind)
-            wall = np.array(wall_vec(x, y, z, 5))
+            wall = np.array(wall_vec(x, y, z, 5), dtype = np.float64)
 
             total_vec += wall 
-
             # assign new loc and speed to agent
             agent.set_current(x + total_vec[0], y + total_vec[1], z + total_vec[2], total_vec[0], total_vec[1], total_vec[2])
         
@@ -89,21 +87,11 @@ class Simulation():
             j.append(y)
             k.append(z)
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection = "3d")
-        ax.scatter(i, j, k)
+        scat._offsets3d = (i, j, k)
 
-        ax.set_xlim(0, 100)
-        ax.set_ylim(0, 100)
-        ax.set_zlim(0, 100)
-
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
-        ax.set_zlabel("z")
-
-        plt.show(block=False)   # non-blocking
-        plt.pause(0.2)          # keep the window open for 0.2s
-        plt.close()
+        fig.canvas.draw_idle()
+        plt.pause(0.05)           
+        
 
     def dump():
         return
@@ -128,7 +116,20 @@ class Simulation():
         return [id_ for _, id_ in smallest_near_x]
 
 # test code
-sim = Simulation(100, 7, 0.45, 0.45, 0.1)
-for i in range(100):
+sim = Simulation(200, 7, 0.1, 0.7, 0.2)
+plt.ion()
+fig = plt.figure()
+ax = fig.add_subplot(111, projection = "3d")
+ax.set_xlim(0, 100)
+ax.set_ylim(0, 100)
+ax.set_zlim(0, 100)
+ax.set_xlabel("x")
+ax.set_ylabel("y")
+ax.set_zlabel("z")
+scat = ax.scatter([], [], [])
+for i in range(200):
     sim.step()
     sim.show()
+
+plt.ioff()
+plt.show()
