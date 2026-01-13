@@ -5,9 +5,7 @@
 
 # so basically check the location and see how close it is to the wall, calculate the vector to the wall, return the scaled opposite vextor from the wall
 
-def wall_vec(self, effective_distance):
-    x, y, z = self.location
-
+def wall_vec(x, y, z, effective_distance):
     def wall_distance(v):
         return v - 100 if v >= 50 else v
 
@@ -20,7 +18,7 @@ def wall_vec(self, effective_distance):
     az = 1 if abs(dz) <= effective_distance else 0
 
     return (
-        dx * ax / 10,
-        dy * ay / 10,
-        dz * az / 10
+        effective_distance * ax / dx,
+        effective_distance * ay / dy,
+        effective_distance * az / dz
     )
