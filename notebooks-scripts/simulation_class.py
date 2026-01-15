@@ -8,7 +8,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from agent_class import Agent, Predator
 from wall import wall_vec
 class Simulation():
-    def __init__(self, N_birds, nearest_x, loc_vector_scale, dir_vector_scale, noise_vector_scale):
+    def __init__(self, N_birds, nearest_x, loc_vector_scale, dir_vector_scale, noise_vector_scale, angular_distance_cutoff):
         # needed variables
         self.timestep = 0
         self.N_birds = N_birds
@@ -16,6 +16,7 @@ class Simulation():
         self.loc_vector_scale = loc_vector_scale
         self.dir_vector_scale = dir_vector_scale
         self.noise_vector_scale = noise_vector_scale
+        self.angular_distance_cutoff = angular_distance_cutoff
 
         # initialize birds in a list
         self.agents = [Agent(i) for i in range(N_birds)]
@@ -25,7 +26,7 @@ class Simulation():
             #random normalized speed
             v = np.random.normal(size=3)
             unit_v = v / np.linalg.norm(v)
-            agent.setup(random.uniform(40, 60), random.uniform(40, 60), random.uniform(40, 60), unit_v[0], unit_v[1], unit_v[2])
+            agent.setup(random.uniform(40, 60), random.uniform(40, 60), random.uniform(40, 60),unit_v[0], unit_v[1], unit_v[2])
 
     def step(self):
         # variables used to find nearest birds
@@ -48,15 +49,18 @@ class Simulation():
             # three components of speed vector: location, direction, noise ; n = neighbour
             total_loc_vector = np.array([0, 0, 0], dtype=np.float64) #x, y, z
             total_direction_vector = np.array([0, 0, 0], dtype=np.float64) #x, y, z
+            xlist = []
+            ylist = []
+            zlist = []
             for id in nearest_ids:
                 nx, ny, nz, nvx, nvy, nvz, nid = self.agents[id].output_last()
-                total_loc_vector[0] += nx - x
-                total_loc_vector[1] += ny - y
-                total_loc_vector[2] += nz - z
+                xlist.append(nx)
+                ylist.append(ny)
+                zlist.append(nz)
                 total_direction_vector[0] += nvx
                 total_direction_vector[1] += nvy
                 total_direction_vector[2] += nvz
-            loc_vec = total_loc_vector / self.nearest_x
+            loc_vec = self.proj_to_edge(x, y, z, xlist, ylist, zlist)
             direction_vec = total_direction_vector / self.nearest_x
 
             # these vectors need to be normalised and given their required scale afctor
@@ -114,9 +118,35 @@ class Simulation():
         smallest_near_x = sorted(items, key=lambda x: x[0])[:near_x]
 
         return [id_ for _, id_ in smallest_near_x]
+    
+    def proj_to_edge(self, ownx, owny, ownz, xlist, ylist, zlist):
+        # lists are in order nearest to far away first one automatically stays
+        saved_vectors = [np.array([xlist[0] - ownx, ylist[0] - owny, zlist[0] - ownz])]
+        # check angle between all saved vectors and current vector, if bigger than cutoff save
+        for i in range(1, len(xlist)):
+            check_vector = np.array([xlist[i] - ownx, ylist[i] - owny, zlist[i] - ownz])
+            inside_cutoff = False
+            #loop over all already saved vectors
+            for vector in saved_vectors:
+                angle_temp = np.dot(vector, check_vector) / (np.linalg.norm(vector) * np.linalg.norm(check_vector))
+                angle = np.arccos(np.clip(angle_temp, -1.0, 1.0))
+                if angle < self.angular_distance_cutoff:
+                    inside_cutoff = True
+
+            #if inside cutoff do nothing, else save
+            if inside_cutoff == False:
+                saved_vectors.append(check_vector)
+
+            
+        total = np.array([0, 0, 0], dtype = np.float64)
+        for item in saved_vectors:
+            total += item
+
+        norm_total = total / np.linalg.norm(total)
+        return norm_total
 
 # test code
-sim = Simulation(200, 7, 0.1, 0.7, 0.2)
+sim = Simulation(200, 7, 0.00, 0.85, 0.15, 0.4 * math.pi)
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection = "3d")
@@ -126,8 +156,8 @@ ax.set_zlim(0, 100)
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
-scat = ax.scatter([], [], [])
-for i in range(200):
+scat = ax.scatter([], [], [], s = 5)
+for i in range(2000):
     sim.step()
     sim.show()
 
