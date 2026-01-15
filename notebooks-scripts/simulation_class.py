@@ -49,7 +49,7 @@ class Simulation():
             bird_loc=(x,y,z)
             effective_dist=20 #can change (have a look at the papers)
             pred_loc= ()  #coming soon 
-            react_pred_vec= self.bird_react_to_predator(self,bird_loc,pred_loc,effective_dist)
+            react_pred_vec= self.bird_react_to_predator(bird_loc,pred_loc,effective_dist)
 
             # three components of speed vector: location, direction, noise ; n = neighbour
             total_loc_vector = np.array([0, 0, 0], dtype=np.float64) #x, y, z
