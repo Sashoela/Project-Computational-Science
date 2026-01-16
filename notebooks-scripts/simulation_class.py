@@ -97,6 +97,7 @@ class Simulation():
                 # if within "range" add vector to this bird to total
                 if dist < self.predator_area:
                     vec = np.array([i[a] - predx, j[a] - predy, k[a] - predz], dtype = np.float64)
+                    vec = vec / np.linalg.norm(vec)
                     vector += vec
             #normalize and scale vector to speed = 2
             movement = vector / np.linalg.norm(vector) * np.sqrt(2)
