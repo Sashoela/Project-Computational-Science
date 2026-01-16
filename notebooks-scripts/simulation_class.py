@@ -116,7 +116,7 @@ class Simulation():
         return [id_ for _, id_ in smallest_near_x]
 
 # test code
-sim = Simulation(200, 7, 0.1, 0.7, 0.2)
+sim = Simulation(200, 7, 0, 0.8, 0.2)
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection = "3d")
@@ -126,10 +126,9 @@ ax.set_zlim(0, 100)
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
-scat = ax.scatter([], [], [])
+scat = ax.scatter([], [], [], s = 5)
 for i in range(200):
     sim.step()
     sim.show()
-
 plt.ioff()
 plt.show()
