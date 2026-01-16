@@ -63,7 +63,7 @@ class Predator():
     def info(self):
         return self.x, self.y, self.z
     
-    def update(self, dx, dy, dz):
-        self.x = dx
-        self.y = dy
-        self.z = dz
+    def update(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
