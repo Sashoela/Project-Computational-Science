@@ -16,6 +16,8 @@ class Simulation():
         self.loc_vector_scale = loc_vector_scale
         self.dir_vector_scale = dir_vector_scale
         self.noise_vector_scale = noise_vector_scale
+        self.predator_area = 25
+        self.pred_intro = 100
 
         # initialize birds in a list
         self.agents = [Agent(i) for i in range(N_birds)]
@@ -48,8 +50,11 @@ class Simulation():
             #bird reaction to predator vector
             bird_loc=(x,y,z)
             effective_dist=20 #can change (have a look at the papers)
-            pred_loc= ()  #coming soon 
-            react_pred_vec= self.bird_react_to_predator(bird_loc,pred_loc,effective_dist)
+            if self.timestep > self.pred_intro:
+                pred_loc = self.predator.info()
+                react_pred_vec= self.bird_react_to_predator(bird_loc,pred_loc,effective_dist)
+            else : 
+                react_pred_vec = np.array([0, 0, 0])
 
             # three components of speed vector: location, direction, noise ; n = neighbour
             total_loc_vector = np.array([0, 0, 0], dtype=np.float64) #x, y, z
@@ -80,6 +85,25 @@ class Simulation():
             # assign new loc and speed to agent
             agent.set_current(x + total_vec[0], y + total_vec[1], z + total_vec[2], total_vec[0], total_vec[1], total_vec[2])
         
+        # predator movement
+        if self.timestep == self.pred_intro:
+            self.predator = Predator()
+        if self.timestep > self.pred_intro:
+            predx, predy, predz = self.predator.info()
+            # use i, j and k list with all bird info from earlier in the step function
+            vector = np.array([0, 0, 0], dtype = np.float64)
+            for a in range(len(i)):
+                dist = np.sqrt(((predx - i[a]) ** 2) + ((predy - j[a]) ** 2) + ((predz - k[a]) ** 2))
+                # if within "range" add vector to this bird to total
+                if dist < self.predator_area:
+                    vec = np.array([i[a] - predx, j[a] - predy, k[a] - predz], dtype = np.float64)
+                    vector += vec
+            #normalize and scale vector to speed = 2
+            movement = vector / np.linalg.norm(vector) * np.sqrt(2)
+            #calc new x, y, z and update predator
+            self.predator.update(predx + movement[0], predy + movement[1], predz + movement[2])
+        self.timestep += 1
+
         # all agents now calculated a new location and speed -> step calculations done -> "current" to "last" for next step
         for agent in self.agents:
             agent.current_to_last()
@@ -94,7 +118,6 @@ class Simulation():
             k.append(z)
 
         scat._offsets3d = (i, j, k)
-
         fig.canvas.draw_idle()
         plt.pause(0.05)           
         
@@ -129,7 +152,7 @@ class Simulation():
             (y - j)**2 +
             (z - k)**2
         )
-        if dist==0: return(0,0,0) # can be also changed to bird dying but for now i just ignore
+        if dist==0: return np.array([0,0,0]) # can be also changed to bird dying but for now i just ignore
         closeness = 1.0 - (dist / effective_dist)
         beta=5 #we can change this on how wild do we want reaction to be 
         strength = (np.exp(beta * closeness) - 1.0) / (np.exp(beta) - 1.0)
@@ -137,13 +160,13 @@ class Simulation():
             a=((x-i)/dist)*strength
             b=((y-j)/dist)*strength
             c=((z-k)/dist)*strength
-            return(a,b,c)
-        else: return(0,0,0)
+            return np.array([a,b,c])
+        else: return np.array([0,0,0])
             
 
 
 # test code
-sim = Simulation(200, 7, 0, 0.8, 0.2)
+sim = Simulation(400, 7, 0, 0.8, 0.2)
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection = "3d")
@@ -154,6 +177,7 @@ ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
 scat = ax.scatter([], [], [], s = 5)
+pred_scat = ax.scatter([], [], [], c = "red", s = 10)
 for i in range(200):
     sim.step()
     sim.show()
