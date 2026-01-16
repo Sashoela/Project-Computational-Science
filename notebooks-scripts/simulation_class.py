@@ -45,6 +45,12 @@ class Simulation():
             #find nearest birds
             nearest_ids = self.nearest_x_ids(i,j,k,ids,self.nearest_x,id)
 
+            #bird reaction to predator vector
+            bird_loc=(x,y,z)
+            effective_dist=20 #can change (have a look at the papers)
+            pred_loc= ()  #coming soon 
+            react_pred_vec= self.bird_react_to_predator(bird_loc,pred_loc,effective_dist)
+
             # three components of speed vector: location, direction, noise ; n = neighbour
             total_loc_vector = np.array([0, 0, 0], dtype=np.float64) #x, y, z
             total_direction_vector = np.array([0, 0, 0], dtype=np.float64) #x, y, z
@@ -114,6 +120,27 @@ class Simulation():
         smallest_near_x = sorted(items, key=lambda x: x[0])[:near_x]
 
         return [id_ for _, id_ in smallest_near_x]
+
+    def bird_react_to_predator(self,bird_loc,pred_loc,effective_dist):
+        x,y,z=bird_loc
+        i,j,k=pred_loc
+        dist=np.sqrt(
+            (x - i)**2 +
+            (y - j)**2 +
+            (z - k)**2
+        )
+        if dist==0: return(0,0,0) # can be also changed to bird dying but for now i just ignore
+        closeness = 1.0 - (dist / effective_dist)
+        beta=5 #we can change this on how wild do we want reaction to be 
+        strength = (np.exp(beta * closeness) - 1.0) / (np.exp(beta) - 1.0)
+        if dist <= effective_dist:
+            a=((x-i)/dist)*strength
+            b=((y-j)/dist)*strength
+            c=((z-k)/dist)*strength
+            return(a,b,c)
+        else: return(0,0,0)
+            
+
 
 # test code
 sim = Simulation(200, 7, 0, 0.8, 0.2)
