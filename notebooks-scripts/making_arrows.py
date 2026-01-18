@@ -11,37 +11,73 @@ from wall import wall_vec
 
 # --- Pyvista Visualisation --- 
 
-class PyVistaViewer: 
-    def __init__(self, sim):
-        self.sim = sim 
+class PyVistaViewer:
+    def __init__(self, sim, arrow_scale=2.0, smoothing=0.2):
+        self.sim = sim
+        self.arrow_scale = arrow_scale
+        self.alpha = smoothing   # smoothing factor (0.1–0.3 recommended)
 
-        #initial positions and velocities 
+        # Initial positions & velocities
         positions = np.array([agent.output_last()[:3] for agent in sim.agents])
+        velocities = np.array([agent.output_last()[3:6] for agent in sim.agents])
 
-        #Create a point cloud
+        # Normalize velocities
+        speeds = np.linalg.norm(velocities, axis=1, keepdims=True) + 1e-8
+        velocities = velocities / speeds
+
+        # Store smoothed render velocity
+        self.render_velocity = velocities.copy()
+
+        # Create point cloud
         self.cloud = pv.PolyData(positions)
+        self.cloud["velocity"] = self.render_velocity
 
-
-
-        #Plotter 
-        self.plotter = pv.Plotter()
-        self.plotter.add_axes()
-        self.plotter.set_background("black")
-
-        self.actor = self.plotter.add_points(
-            self.cloud,
-            render_points_as_spheres=True,
-            point_size=6,
-            color="white"
+        # Create initial glyphs
+        arrows = self.cloud.glyph(
+            orient="velocity",
+            scale=False,
+            factor=self.arrow_scale
         )
+
+        # Plotter
+        self.plotter = pv.Plotter()
+        self.plotter.set_background("black")
+        self.plotter.add_axes()
+
+        self.actor = self.plotter.add_mesh(arrows, color="white")
         self.plotter.show(interactive_update=True)
 
     def update(self):
-        #Update positions 
-        new_positions = np.array([agent.output_last()[:3] for agent in self.sim.agents])
+        # Get new physics state
+        positions = np.array([agent.output_last()[:3] for agent in self.sim.agents])
+        raw_vel = np.array([agent.output_last()[3:6] for agent in self.sim.agents])
 
-        self.cloud.points = new_positions
+        # Normalize raw velocity
+        speed = np.linalg.norm(raw_vel, axis=1, keepdims=True)
+        speed = np.maximum(speed, 0.05)  # clamp to avoid flipping
+        raw_vel = raw_vel / speed
 
+        # Exponential smoothing (THIS is the key)
+        self.render_velocity = (
+            (1.0 - self.alpha) * self.render_velocity +
+            self.alpha * raw_vel
+        )
+
+        # Re-normalize after smoothing
+        speed = np.linalg.norm(self.render_velocity, axis=1, keepdims=True) + 1e-8
+        self.render_velocity = self.render_velocity / speed
+
+        # Update geometry
+        self.cloud.points = positions
+        self.cloud["velocity"] = self.render_velocity
+
+        arrows = self.cloud.glyph(
+            orient="velocity",
+            scale=False,
+            factor=self.arrow_scale
+        )
+
+        self.actor.mapper.SetInputData(arrows)
         self.plotter.update()
 
 
@@ -203,7 +239,7 @@ sim = Simulation(
     noise_scale=0.3
 )
 
-viewer = PyVistaViewer(sim)
+viewer = PyVistaViewer(sim, arrow_scale=2.0, smoothing=0.2)
 
 for _ in range(500):
     sim.step()
