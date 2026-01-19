@@ -58,7 +58,6 @@ class Simulation():
         return sep_vec
 
     def step(self):
-        print(self.timestep)
         # variables used to find nearest birds
         i, j, k, ids = [], [], [], []
         for agent in self.agents:
@@ -148,7 +147,6 @@ class Simulation():
 
         if self.timestep > self.pred_intro:
             x, y, z = self.predator.info()
-            print(x, y, z)
             i.append(x)
             j.append(y)
             k.append(z)
