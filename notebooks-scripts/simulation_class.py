@@ -29,6 +29,33 @@ class Simulation():
             unit_v = v / np.linalg.norm(v)
             agent.setup(random.uniform(40, 60), random.uniform(40, 60), random.uniform(40, 60), unit_v[0], unit_v[1], unit_v[2])
 
+    # --- Boids Rules ---
+    def cohesion(self, agent_index, neighbor_ids):
+        if not neighbor_ids:
+            return np.zeros(3)
+        agent_pos = np.array(self.agents[agent_index].output_last()[:3])
+        neighbor_positions = np.array([self.agents[nid].output_last()[:3] for nid in neighbor_ids])
+        return neighbor_positions.mean(axis=0) - agent_pos
+
+    def alignment(self, agent_index, neighbor_ids):
+        if not neighbor_ids:
+            return np.zeros(3)
+        neighbor_vels = np.array([self.agents[nid].output_last()[3:6] for nid in neighbor_ids])
+        return neighbor_vels.mean(axis=0)
+
+    def separation(self, agent_index, neighbor_ids, separation_distance=5.0):
+        if not neighbor_ids:
+            return np.zeros(3)
+        agent_pos = np.array(self.agents[agent_index].output_last()[:3])
+        sep_vec = np.zeros(3)
+        for nid in neighbor_ids:
+            neighbor_pos = np.array(self.agents[nid].output_last()[:3])
+            diff = agent_pos - neighbor_pos
+            dist = np.linalg.norm(diff)
+            if 0 < dist < separation_distance:
+                sep_vec += diff / dist
+        return sep_vec
+
     def step(self):
         # variables used to find nearest birds
         i, j, k, ids = [], [], [], []
