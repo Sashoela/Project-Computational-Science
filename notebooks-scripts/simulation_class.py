@@ -119,7 +119,12 @@ class Simulation():
             k.append(z)
 
         scat._offsets3d = (i, j, k)
-        fig.canvas.draw_idle()
+                #predator
+        if self.timestep > self.pred_intro:
+            x, y, z = self.predator.info()
+            pred_scat._offsets3d = (x, y, z)
+        fig.canvas.draw()
+        fig.canvas.flush_events()
         plt.pause(0.05)           
         
 
