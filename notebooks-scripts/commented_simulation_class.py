@@ -15,15 +15,16 @@ class PyVistaViewer:
     def __init__(self, sim):
         self.sim = sim 
 
+        # --- Birds --- 
+
         #initial positions and velocities 
         positions = np.array([agent.output_last()[:3] for agent in sim.agents])
-
         #Create a point cloud
         self.cloud = pv.PolyData(positions)
 
+        # --- Plotter ---
 
-
-        #Plotter 
+        # Birds 
         self.plotter = pv.Plotter()
         self.plotter.add_axes()
         self.plotter.set_background("black")
@@ -78,7 +79,9 @@ class Simulation:
             agent.setup(pos[0], pos[1], pos[2], vel[0], vel[1], vel[2])
 
         #--- Initialize predator --- 
-        self.predator = Predator
+        self.predator = None, 
+        self.pred_intro = 50
+        self.predator_area = 30 
 
     # --- Nearest neighbors ---
     def nearest_x_ids(self, x_positions, y_positions, z_positions, agent_ids, num_neighbors, current_index):
@@ -186,7 +189,7 @@ class Simulation:
         # Save current positions for next step
         for agent in self.agents:
             agent.current_to_last()
-
+            
         self.timestep += 1
 
     # --- Visualization ---
@@ -198,11 +201,11 @@ class Simulation:
 
 # Initialize simulation
 sim = Simulation(
-    N_birds=200,
+    N_birds=500,
     nearest_neighbors=7,
     cohesion_scale=1,
-    alignment_scale=1,
-    separation_scale=1,
+    alignment_scale = 1,
+    separation_scale = 1,
     noise_scale=0.3
 )
 
