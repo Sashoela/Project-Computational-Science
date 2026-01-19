@@ -39,6 +39,26 @@ class Simulation():
             k.append(z)
             ids.append(d)
 
+        # predator movement
+        if self.timestep == self.pred_intro:
+            self.predator = Predator()
+        if self.timestep > self.pred_intro:
+            predx, predy, predz = self.predator.info()
+            # use i, j and k list with all bird info from earlier in the step function
+            vector = np.array([0, 0, 0], dtype = np.float64)
+            for a in range(len(i)):
+                dist = np.sqrt(((predx - i[a]) ** 2) + ((predy - j[a]) ** 2) + ((predz - k[a]) ** 2))
+                # if within "range" add vector to this bird to total
+                if dist < self.predator_area:
+                    vec = np.array([i[a] - predx, j[a] - predy, k[a] - predz], dtype = np.float64)
+                    vec = vec / np.linalg.norm(vec)
+                    vector += vec
+            #normalize and scale vector to speed = 2
+            movement = vector / np.linalg.norm(vector) * np.sqrt(2)
+            #calc new x, y, z and update predator
+            self.predator.update(predx + movement[0], predy + movement[1], predz + movement[2])
+        self.timestep += 1
+
         # make a loop to update all agents (loop over all birds)
         for agent in self.agents:
             # data of current bird
@@ -77,7 +97,8 @@ class Simulation():
             noise = np.random.normal(size=3)
             scaled_noise = noise / np.linalg.norm(noise) * self.noise_vector_scale
             #total movement :
-            total_vec = scaled_loc_vec + scaled_dir_vec + scaled_noise
+            if any(react_pred_vec): total_vec = react_pred_vec + scaled_noise
+            else: total_vec = scaled_loc_vec + scaled_dir_vec + scaled_noise
             ##### all other influences on movement (wall and wind)
             wall = np.array(wall_vec(x, y, z, 5), dtype = np.float64)
 
@@ -85,25 +106,7 @@ class Simulation():
             # assign new loc and speed to agent
             agent.set_current(x + total_vec[0], y + total_vec[1], z + total_vec[2], total_vec[0], total_vec[1], total_vec[2])
         
-        # predator movement
-        if self.timestep == self.pred_intro:
-            self.predator = Predator()
-        if self.timestep > self.pred_intro:
-            predx, predy, predz = self.predator.info()
-            # use i, j and k list with all bird info from earlier in the step function
-            vector = np.array([0, 0, 0], dtype = np.float64)
-            for a in range(len(i)):
-                dist = np.sqrt(((predx - i[a]) ** 2) + ((predy - j[a]) ** 2) + ((predz - k[a]) ** 2))
-                # if within "range" add vector to this bird to total
-                if dist < self.predator_area:
-                    vec = np.array([i[a] - predx, j[a] - predy, k[a] - predz], dtype = np.float64)
-                    vec = vec / np.linalg.norm(vec)
-                    vector += vec
-            #normalize and scale vector to speed = 2
-            movement = vector / np.linalg.norm(vector) * np.sqrt(2)
-            #calc new x, y, z and update predator
-            self.predator.update(predx + movement[0], predy + movement[1], predz + movement[2])
-        self.timestep += 1
+        
 
         # all agents now calculated a new location and speed -> step calculations done -> "current" to "last" for next step
         for agent in self.agents:
