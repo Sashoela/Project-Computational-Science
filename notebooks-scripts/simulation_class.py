@@ -8,15 +8,16 @@ from mpl_toolkits.mplot3d import Axes3D
 from agent_class import Agent, Predator
 from wall import wall_vec
 class Simulation():
-    def __init__(self, N_birds, nearest_x, loc_vector_scale, dir_vector_scale, noise_vector_scale):
+    def __init__(self, N_birds, nearest_x, coh_vector_scale, ali_vector_scale, sep_vector_scale, noise_vector_scale):
         # needed variables
         self.timestep = 0
         self.N_birds = N_birds
         self.nearest_x = nearest_x
-        self.loc_vector_scale = loc_vector_scale
-        self.dir_vector_scale = dir_vector_scale
+        self.coh_vector_scale = coh_vector_scale
+        self.ali_vector_scale = ali_vector_scale
+        self.sep_vector_scale = sep_vector_scale
         self.noise_vector_scale = noise_vector_scale
-        self.predator_area = 25
+        self.predator_area = 50
         self.pred_intro = 100
 
         # initialize birds in a list
@@ -57,6 +58,7 @@ class Simulation():
         return sep_vec
 
     def step(self):
+        print(self.timestep)
         # variables used to find nearest birds
         i, j, k, ids = [], [], [], []
         for agent in self.agents:
@@ -81,9 +83,10 @@ class Simulation():
                     vec = vec / np.linalg.norm(vec)
                     vector += vec
             #normalize and scale vector to speed = 2
-            movement = vector / np.linalg.norm(vector) * np.sqrt(2)
-            #calc new x, y, z and update predator
-            self.predator.update(predx + movement[0], predy + movement[1], predz + movement[2])
+            if any(vector):
+                movement = vector / np.linalg.norm(vector) * np.sqrt(2)
+                #calc new x, y, z and update predator
+                self.predator.update(predx + movement[0], predy + movement[1], predz + movement[2])
         self.timestep += 1
 
         # make a loop to update all agents (loop over all birds)
@@ -103,29 +106,24 @@ class Simulation():
             else : 
                 react_pred_vec = np.array([0, 0, 0])
 
-            # three components of speed vector: location, direction, noise ; n = neighbour
-            total_loc_vector = np.array([0, 0, 0], dtype=np.float64) #x, y, z
-            total_direction_vector = np.array([0, 0, 0], dtype=np.float64) #x, y, z
-            for id in nearest_ids:
-                nx, ny, nz, nvx, nvy, nvz, nid = self.agents[id].output_last()
-                total_loc_vector[0] += nx - x
-                total_loc_vector[1] += ny - y
-                total_loc_vector[2] += nz - z
-                total_direction_vector[0] += nvx
-                total_direction_vector[1] += nvy
-                total_direction_vector[2] += nvz
-            loc_vec = total_loc_vector / self.nearest_x
-            direction_vec = total_direction_vector / self.nearest_x
+            # four components of speed vector: location, direction, noise ; n = neighbour
+            cohesion_vec = self.cohesion(id, nearest_ids)
+            cohesion_vec = (cohesion_vec / np.linalg.norm(cohesion_vec)) * self.coh_vector_scale
 
-            # these vectors need to be normalised and given their required scale afctor
-            scaled_loc_vec = (loc_vec / np.linalg.norm(loc_vec)) * self.loc_vector_scale
-            scaled_dir_vec = (direction_vec / np.linalg.norm(direction_vec)) * self.dir_vector_scale
-            # noise vector
+            alignment_vec = self.alignment(id, nearest_ids)
+            alignment_vec = (alignment_vec / np.linalg.norm(alignment_vec)) * self.ali_vector_scale
+
+            seperation_vec = self.separation(id, nearest_ids)
+            if any(seperation_vec):seperation_vec = (seperation_vec / np.linalg.norm(seperation_vec)) * self.sep_vector_scale
+
             noise = np.random.normal(size=3)
             scaled_noise = noise / np.linalg.norm(noise) * self.noise_vector_scale
+
             #total movement :
             if any(react_pred_vec): total_vec = react_pred_vec + scaled_noise
-            else: total_vec = scaled_loc_vec + scaled_dir_vec + scaled_noise
+            else: 
+                total_vec = cohesion_vec + alignment_vec + seperation_vec + scaled_noise
+                total_vec = total_vec / np.linalg.norm(total_vec)
             ##### all other influences on movement (wall and wind)
             wall = np.array(wall_vec(x, y, z, 5), dtype = np.float64)
 
@@ -144,6 +142,13 @@ class Simulation():
         i, j, k = [], [], []
         for agent in self.agents:
             x, y, z, vx, vy, vz, id = agent.output_last()
+            i.append(x)
+            j.append(y)
+            k.append(z)
+
+        if self.timestep > self.pred_intro:
+            x, y, z = self.predator.info()
+            print(x, y, z)
             i.append(x)
             j.append(y)
             k.append(z)
@@ -184,20 +189,21 @@ class Simulation():
             (z - k)**2
         )
         if dist==0: return np.array([0,0,0]) # can be also changed to bird dying but for now i just ignore
+        dx, dy, dz = x - i, y - j, z - k
+        direction = np.array([dx, dy, dz]) / dist   # unit vector
         closeness = 1.0 - (dist / effective_dist)
         beta=5 #we can change this on how wild do we want reaction to be 
         strength = (np.exp(beta * closeness) - 1.0) / (np.exp(beta) - 1.0)
         if dist <= effective_dist:
-            a=((x-i)/dist)*strength
-            b=((y-j)/dist)*strength
-            c=((z-k)/dist)*strength
-            return np.array([a,b,c])
+            min_speed, max_speed = 1.0, 2.0
+            speed = min_speed + (max_speed - min_speed) * strength
+            return speed * direction
         else: return np.array([0,0,0])
             
 
 
 # test code
-sim = Simulation(400, 7, 0, 0.8, 0.2)
+sim = Simulation(400, 7, 0.3, 0.3, 0.3, 0.1)
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection = "3d")
@@ -208,7 +214,6 @@ ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
 scat = ax.scatter([], [], [], s = 5)
-pred_scat = ax.scatter([], [], [], c = "red", s = 10)
 for i in range(200):
     sim.step()
     sim.show()
