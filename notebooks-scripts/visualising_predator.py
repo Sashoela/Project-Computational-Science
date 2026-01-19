@@ -307,7 +307,7 @@ sim = Simulation(
     alignment_scale=1,
     separation_scale=1,
     noise_scale=0.3,
-    predator_area=25, 
+    predator_area=50, 
     pred_intro=50
 )
 
