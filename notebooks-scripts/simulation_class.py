@@ -189,14 +189,15 @@ class Simulation():
             (z - k)**2
         )
         if dist==0: return np.array([0,0,0]) # can be also changed to bird dying but for now i just ignore
+        dx, dy, dz = x - i, y - j, z - k
+        direction = np.array([dx, dy, dz]) / dist   # unit vector
         closeness = 1.0 - (dist / effective_dist)
         beta=5 #we can change this on how wild do we want reaction to be 
         strength = (np.exp(beta * closeness) - 1.0) / (np.exp(beta) - 1.0)
         if dist <= effective_dist:
-            a=((x-i)/dist)*strength
-            b=((y-j)/dist)*strength
-            c=((z-k)/dist)*strength
-            return np.array([a,b,c])
+            min_speed, max_speed = 1.0, 2.0
+            speed = min_speed + (max_speed - min_speed) * strength
+            return speed * direction
         else: return np.array([0,0,0])
             
 
