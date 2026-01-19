@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import pyvista as pv 
 
-from agent_class import Agent  # Predator not used for now
+from agent_class import Agent, Predator  
 from wall import wall_vec
 
 # --- Pyvista Visualisation --- 
@@ -76,6 +76,9 @@ class Simulation:
             vel = np.random.randn(3)
             vel /= np.linalg.norm(vel)               # normalize velocity
             agent.setup(pos[0], pos[1], pos[2], vel[0], vel[1], vel[2])
+
+        #--- Initialize predator --- 
+        self.predator = Predator
 
     # --- Nearest neighbors ---
     def nearest_x_ids(self, x_positions, y_positions, z_positions, agent_ids, num_neighbors, current_index):
