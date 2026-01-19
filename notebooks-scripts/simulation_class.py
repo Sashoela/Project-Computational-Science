@@ -17,7 +17,7 @@ class Simulation():
         self.ali_vector_scale = ali_vector_scale
         self.sep_vector_scale = sep_vector_scale
         self.noise_vector_scale = noise_vector_scale
-        self.predator_area = 25
+        self.predator_area = 50
         self.pred_intro = 100
 
         # initialize birds in a list
@@ -142,6 +142,13 @@ class Simulation():
         i, j, k = [], [], []
         for agent in self.agents:
             x, y, z, vx, vy, vz, id = agent.output_last()
+            i.append(x)
+            j.append(y)
+            k.append(z)
+
+        if self.timestep > self.pred_intro:
+            x, y, z = self.predator.info()
+            print(x, y, z)
             i.append(x)
             j.append(y)
             k.append(z)
