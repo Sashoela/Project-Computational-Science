@@ -8,7 +8,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from agent_class import Agent, Predator
 from wall import wall_vec
 class Simulation():
-    def __init__(self, N_birds, nearest_x, coh_vector_scale, ali_vector_scale, sep_vector_scale, noise_vector_scale):
+    def __init__(self, N_birds, nearest_x, coh_vector_scale, ali_vector_scale, sep_vector_scale, noise_vector_scale, pred_intro_time, pred_exit_time):
         # needed variables
         self.timestep = 0
         self.N_birds = N_birds
@@ -18,7 +18,8 @@ class Simulation():
         self.sep_vector_scale = sep_vector_scale
         self.noise_vector_scale = noise_vector_scale
         self.predator_area = 50
-        self.pred_intro = 100
+        self.pred_intro = pred_intro_time
+        self.pred_exit = pred_exit_time
 
         # initialize birds in a list
         self.agents = [Agent(i) for i in range(N_birds)]
@@ -99,7 +100,7 @@ class Simulation():
             #bird reaction to predator vector
             bird_loc=(x,y,z)
             effective_dist=20 #can change (have a look at the papers)
-            if self.timestep > self.pred_intro:
+            if self.timestep > self.pred_intro and self.timestep <= self.pred_exit:
                 pred_loc = self.predator.info()
                 react_pred_vec= self.bird_react_to_predator(bird_loc,pred_loc,effective_dist)
             else : 
@@ -150,6 +151,7 @@ class Simulation():
             i.append(x)
             j.append(y)
             k.append(z)
+            print(x, y, z)
 
         scat._offsets3d = (i, j, k)
         fig.canvas.draw_idle()
@@ -207,7 +209,7 @@ class Simulation():
 
 
 # test code
-sim = Simulation(400, 7, 0.3, 0.3, 0.3, 0.1)
+sim = Simulation(400, 7, 0.3, 0.3, 0.3, 0.1, 100, 600)
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection = "3d")
