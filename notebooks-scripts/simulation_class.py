@@ -19,7 +19,7 @@ class Simulation():
         self.noise_vector_scale = noise_vector_scale
         self.predator_area = 50
         self.pred_intro = pred_intro_time
-        self.pred_exit = pred_exit_time
+        self.pred_exit_time = pred_exit_time
 
         # initialize birds in a list
         self.agents = [Agent(i) for i in range(N_birds)]
@@ -100,7 +100,7 @@ class Simulation():
             #bird reaction to predator vector
             bird_loc=(x,y,z)
             effective_dist=20 #can change (have a look at the papers)
-            if self.timestep > self.pred_intro and self.timestep <= self.pred_exit:
+            if self.timestep > self.pred_intro and self.timestep <= self.pred_exit_time:
                 pred_loc = self.predator.info()
                 react_pred_vec= self.bird_react_to_predator(bird_loc,pred_loc,effective_dist)
             else : 
