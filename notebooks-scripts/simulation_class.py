@@ -156,8 +156,14 @@ class Simulation():
         plt.pause(0.05)           
         
 
-    def dump():
-        return
+    def dump(self):
+        i, j, k = [], [], []
+        for agent in self.agents:
+            x, y, z, vx, vy, vz, id = agent.output_last()
+            i.append(x)
+            j.append(y)
+            k.append(z)
+        return i, j, k
     
 
     def nearest_x_ids(self, i, j, k, ids, near_x, initial_bird):
