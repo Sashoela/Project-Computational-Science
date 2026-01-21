@@ -7,7 +7,11 @@ from mpl_toolkits.mplot3d import Axes3D
 import pyvista as pv 
 
 from agent_class import Agent, Predator 
-from wall import wall_vec
+from wall_fix import wall_vec
+
+"""
+VERY FIRST DRAFT OF THE PREDATOR VISUALISATION 
+"""
 
 # --- Pyvista Visualisation --- 
 
@@ -243,7 +247,7 @@ class Simulation:
                 separation_vec +
                 noise_vec +
                 wall_vec_3d +
-                predator_vec * 8.0   # 🔥 critical scaling
+                predator_vec * 8.0  
             )
 
             # --- Update bird ---
@@ -303,10 +307,10 @@ class Simulation:
 sim = Simulation(
     N_birds=200,
     nearest_neighbors=7,
-    cohesion_scale=1,
-    alignment_scale=1,
+    cohesion_scale=2,
+    alignment_scale=2,
     separation_scale=1,
-    noise_scale=0.3,
+    noise_scale=0.1,
     predator_area=50, 
     pred_intro=50
 )

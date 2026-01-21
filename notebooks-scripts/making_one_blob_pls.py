@@ -10,12 +10,7 @@ from agent_class import Agent, Predator
 from wall_fix import wall_vec
 
 """
-Fixing Problems: 
-Adding global cohesion -> nothing pulling flocks of birds to each other, need an external force to replicate murmurations 
-
-THIS DOCUMENT IS A DRAFT FOR THE ACTUAL FIX. THE ACTUAL FIX IS PREDATOR_VISUALISATION_FIXED.PY
-
-I AM PUSHING IT JUST INCASE I NEED IT FOR WHATEVER REASON. 
+DRAFT FOR MAKING BIRDS ACTUALLY FLOCK 
 """
 
 # --- PyVista Viewer ---
@@ -89,15 +84,32 @@ class Simulation:
             agent.setup(pos[0], pos[1], pos[2], vel[0], vel[1], vel[2])
 
     # --- Nearest neighbors ---
-    def nearest_x_ids(self, positions, agent_ids, num_neighbors, current_index):
+    # --- Nearest neighbors with forward-facing vision ---
+    def nearest_x_ids(self, positions, agent_ids, num_neighbors, current_index, fov_cos=0.5):
+        """
+        Find nearest neighbors in front of the bird.
+        fov_cos: cosine of the field of view angle (e.g., 0.5 ~ 60° forward cone)
+        """
         current_pos = positions[current_index]
+        current_vel = self.agents[current_index].output_last()[3:6]
+        current_vel_norm = current_vel / np.linalg.norm(current_vel)
+
         distances = []
         for i, pos in enumerate(positions):
             if i == current_index:
                 continue
-            dist = np.linalg.norm(current_pos - pos)
-            distances.append((dist, agent_ids[i]))
+            vec_to_neighbor = pos - current_pos
+            dist = np.linalg.norm(vec_to_neighbor)
+            if dist == 0:
+                continue
+            vec_to_neighbor /= dist  # normalize
+            # Only include neighbor if it’s roughly in front
+            if np.dot(current_vel_norm, vec_to_neighbor) >= fov_cos:
+                distances.append((dist, agent_ids[i]))
+
+        # sort and pick closest num_neighbors
         return [agent_id for _, agent_id in sorted(distances, key=lambda x: x[0])[:num_neighbors]]
+
 
     # --- Boids Rules ---
     def cohesion(self, agent_index, neighbor_ids):
@@ -259,12 +271,12 @@ class Simulation:
 # --- Run Simulation ---
 sim = Simulation(
     N_birds=200,
-    nearest_neighbors=10,
+    nearest_neighbors=7,
     cohesion_scale=2.0,
     alignment_scale=2.0,
     separation_scale=1.0,
     noise_scale=0.1,
-    predator_enabled=False, 
+    predator_enabled=True, 
     predator_area=50,
     pred_intro=50
 )

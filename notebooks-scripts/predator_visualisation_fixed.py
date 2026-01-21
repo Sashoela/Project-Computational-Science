@@ -11,11 +11,19 @@ from wall_fix import wall_vec
 
 """
 Fixing Problems: 
-Adding global cohesion -> nothing pulling flocks of birds to each other, need an external force to replicate murmurations 
 
-THIS DOCUMENT IS A DRAFT FOR THE ACTUAL FIX. THE ACTUAL FIX IS PREDATOR_VISUALISATION_FIXED.PY
+Issue with the wall, imported from wall_fix. Keeping the original wall script. 
 
-I AM PUSHING IT JUST INCASE I NEED IT FOR WHATEVER REASON. 
+Issue with cohesion. Birds did not previously want to be in one big flock. Fix: forward vision. 
+Forward vision added in the nearest_x_ids function
+
+Issue with the cohesion function: when added forward vision, the birds with the old cohesion function would just go in one line, which was weird. 
+By normalising the vector, we can get proper flocks. 
+
+Added functions:
+
+Predator Toggle: now you can easily toggle on and off the predator in the sim part. Helps with testing. I had to mainly do it so I could actually make the birds flock. 
+
 """
 
 # --- PyVista Viewer ---
@@ -88,30 +96,49 @@ class Simulation:
             vel /= np.linalg.norm(vel)
             agent.setup(pos[0], pos[1], pos[2], vel[0], vel[1], vel[2])
 
-    # --- Nearest neighbors ---
-    def nearest_x_ids(self, positions, agent_ids, num_neighbors, current_index):
+    # --- Nearest neighbors with forward-facing vision ---
+    def nearest_x_ids(self, positions, agent_ids, num_neighbors, current_index, fov_cos=0.5):
+        """
+        Find nearest neighbors in front of the bird.
+        fov_cos: cosine of the field of view angle (e.g., 0.5 ~ 60° forward cone)
+        """
         current_pos = positions[current_index]
+        current_vel = self.agents[current_index].output_last()[3:6]
+        current_vel_norm = current_vel / np.linalg.norm(current_vel)
+
         distances = []
         for i, pos in enumerate(positions):
             if i == current_index:
                 continue
-            dist = np.linalg.norm(current_pos - pos)
-            distances.append((dist, agent_ids[i]))
+            vec_to_neighbor = pos - current_pos
+            dist = np.linalg.norm(vec_to_neighbor)
+            if dist == 0:
+                continue
+            vec_to_neighbor /= dist  # normalize
+            # Only include neighbor if it’s roughly in front
+            if np.dot(current_vel_norm, vec_to_neighbor) >= fov_cos:
+                distances.append((dist, agent_ids[i]))
+
+        # sort and pick closest num_neighbors
         return [agent_id for _, agent_id in sorted(distances, key=lambda x: x[0])[:num_neighbors]]
+
 
     # --- Boids Rules ---
     def cohesion(self, agent_index, neighbor_ids):
+        """
+        FIX: 
+        - before the birds would just go into a straight line, once the forward vision is applied 
+        - before did not normalise the vector
+
+        NOW:
+        - helps to merge them into a flock
+        """
         if not neighbor_ids:
             return np.zeros(3)
         agent_pos = np.array(self.agents[agent_index].output_last()[:3])
         neighbor_positions = np.array([self.agents[nid].output_last()[:3] for nid in neighbor_ids])
         center = neighbor_positions.mean(axis=0)
         dist_to_center = np.linalg.norm(center - agent_pos)
-        # Standard cohesion scale
-
-        """
-        NEW
-        """
         vec = center - agent_pos
         cohesion_vec = vec / np.linalg.norm(vec)
 
@@ -135,26 +162,6 @@ class Simulation:
             if 0 < dist < separation_distance:
                 sep_vec += diff / (dist ** 2)  # stronger at close range
         return sep_vec
-
-    # --- Global Cohesion ---
-    def global_cohesion(self, agent_index, strength=0.05):
-        positions = np.array([a.output_last()[:3] for a in self.agents])
-        center = positions.mean(axis=0)
-        agent_pos = np.array(self.agents[agent_index].output_last()[:3])
-        vec = center - agent_pos
-        dist = np.linalg.norm(vec)
-        if dist == 0:
-            return np.zeros(3)
-        return strength * (vec / dist)
-    
-    def global_alignment(self, agent_index, strength=0.02):
-        positions = np.array([a.output_last()[:3] for a in self.agents])
-        velocities = np.array([a.output_last()[3:6] for a in self.agents])
-        center_vel = velocities.mean(axis=0)
-        norm = np.linalg.norm(center_vel)
-        if norm == 0:
-            return np.zeros(3)
-        return strength * (center_vel / norm)
 
 
     
@@ -197,8 +204,7 @@ class Simulation:
             cohesion_vec = self.cohesion(idx, neighbors) * self.cohesion_scale
             alignment_vec = self.alignment(idx, neighbors) * self.alignment_scale
             separation_vec = self.separation(idx, neighbors) * self.separation_scale
-            global_vec = self.global_cohesion(idx)
-            global_align_vec = self.global_alignment(idx)
+
 
             # --- Noise burst ---
             noise_vec = np.random.randn(3)
@@ -220,7 +226,7 @@ class Simulation:
 
             # --- Combine forces with inertia ---
             current_vel = velocities[idx]
-            total_vec = cohesion_vec + alignment_vec + separation_vec + noise_vec + wall_vec_3d + global_vec + global_align_vec
+            total_vec = cohesion_vec + alignment_vec + separation_vec + noise_vec + wall_vec_3d
             new_vel = current_vel + total_vec
             new_vel /= np.linalg.norm(new_vel)  # normalize
             new_pos = bird_pos + new_vel
@@ -259,12 +265,12 @@ class Simulation:
 # --- Run Simulation ---
 sim = Simulation(
     N_birds=200,
-    nearest_neighbors=10,
+    nearest_neighbors=7,
     cohesion_scale=2.0,
     alignment_scale=2.0,
     separation_scale=1.0,
     noise_scale=0.1,
-    predator_enabled=False, 
+    predator_enabled=True, 
     predator_area=50,
     pred_intro=50
 )
