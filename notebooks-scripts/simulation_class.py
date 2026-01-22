@@ -73,15 +73,44 @@ class Simulation():
             self.predator = Predator()
         if self.timestep > self.pred_intro:
             predx, predy, predz = self.predator.info()
+            vector = np.array([0.0, 0.0, 0.0], dtype=np.float64)
             # use i, j and k list with all bird info from earlier in the step function
-            vector = np.array([0, 0, 0], dtype = np.float64)
+            '''vector = np.array([0, 0, 0], dtype = np.float64)
             for a in range(len(i)):
                 dist = np.sqrt(((predx - i[a]) ** 2) + ((predy - j[a]) ** 2) + ((predz - k[a]) ** 2))
                 # if within "range" add vector to this bird to total
                 if dist < self.predator_area:
                     vec = np.array([i[a] - predx, j[a] - predy, k[a] - predz], dtype = np.float64)
                     vec = vec / np.linalg.norm(vec)
-                    vector += vec
+                    vector += vec'''
+            listed=[]
+            bin=10
+            for a in range(0,9):
+                for b in range(0,9):
+                    for c in range(0,9):
+                        amount=0
+                        for d in range(0,len(i)):
+                            if (bin*a<=i[d]<=bin*(a+1) and bin*b<=j[d]<=bin*(b+1) and bin*c<=k[d]<=bin*(c+1)): amount+=1
+                        listed.append((amount,bin*a + bin/2, bin*b + bin/2, bin*c + bin/2))
+            listed_sorted = sorted(listed, key=lambda x: x[0], reverse=True)
+            top3 = listed_sorted[:3]
+            distances=[]
+            for m in range(0,3):
+                g,a,b,c=top3[m]
+                d=np.sqrt((predx-a)**2+(predy-b)**2+(predz-c)**2)
+                distances.append((d,a,b,c))
+            best_dist, best_a, best_b, best_c = min(distances, key=lambda x: x[0])
+            coordinates=(best_a,best_b,best_c)
+            dist = np.linalg.norm(np.array([predx,predy,predz]) - np.array(coordinates))
+            if dist < self.predator_area:
+                    vec = np.array([coordinates[0] - predx, coordinates[1] - predy, coordinates[2] - predz],dtype=np.float64)
+                    norm = np.linalg.norm(vec)
+                    if norm > 0:
+                        vector = vec / norm
+            else: 
+                vec = np.array([i[0] - predx, j[0] - predy,k[0] - predz], dtype = np.float64)
+                vector = vec / np.linalg.norm(vec)
+        
             #normalize and scale vector to speed = 2
             if any(vector):
                 movement = vector / np.linalg.norm(vector) * np.sqrt(2)
