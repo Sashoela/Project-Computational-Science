@@ -108,10 +108,10 @@ class Simulation():
 
             # four components of speed vector: location, direction, noise ; n = neighbour
             cohesion_vec = self.cohesion(id, nearest_ids)
-            cohesion_vec = (cohesion_vec / np.linalg.norm(cohesion_vec)) * self.coh_vector_scale
+            if any(cohesion_vec): cohesion_vec = (cohesion_vec / np.linalg.norm(cohesion_vec)) * self.coh_vector_scale
 
             alignment_vec = self.alignment(id, nearest_ids)
-            alignment_vec = (alignment_vec / np.linalg.norm(alignment_vec)) * self.ali_vector_scale
+            if any(alignment_vec): alignment_vec = (alignment_vec / np.linalg.norm(alignment_vec)) * self.ali_vector_scale
 
             seperation_vec = self.separation(id, nearest_ids)
             if any(seperation_vec):seperation_vec = (seperation_vec / np.linalg.norm(seperation_vec)) * self.sep_vector_scale
@@ -168,11 +168,13 @@ class Simulation():
         return i, j, k
     
 
-    def nearest_x_ids(self, i, j, k, ids, near_x, initial_bird):
+    def nearest_x_ids(self, i, j, k, ids, near_x, initial_bird, fov_cos = 0.5):
         n = initial_bird
         nr = len(i)
         items = []  # (distance, id)
-        
+        self_vel = np.array(self.agents[n].output_last()[3:6]) #velecity direction vector for initial bird
+        self_vel = self_vel / np.linalg.norm(self_vel)
+
         for m in range(nr):
             if m == n:
                 continue
@@ -181,7 +183,11 @@ class Simulation():
                 (j[n] - j[m])**2 +
                 (k[n] - k[m])**2
             )
-            items.append((d, ids[m]))
+            #angle to bird -> check if in view
+            vec_to_neighbour = np.array([i[m] - i[n], j[m] - j[n], k[m] - k[n]])
+            vec_to_neighbour /= np.linalg.norm(vec_to_neighbour) 
+            if np.dot(self_vel, vec_to_neighbour) >= fov_cos:
+                items.append((d, ids[m]))
         smallest_near_x = sorted(items, key=lambda x: x[0])[:near_x]
 
         return [id_ for _, id_ in smallest_near_x]
@@ -209,7 +215,7 @@ class Simulation():
 
 
 # test code
-sim = Simulation(400, 7, 0.3, 0.3, 0.3, 0.1, 100, 600)
+sim = Simulation(100, 7, 0.3, 0.3, 0.3, 0.1, 50, 600)
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection = "3d")
@@ -220,7 +226,7 @@ ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
 scat = ax.scatter([], [], [], s = 5)
-for i in range(200):
+for i in range(400):
     sim.step()
     sim.show()
 plt.ioff()

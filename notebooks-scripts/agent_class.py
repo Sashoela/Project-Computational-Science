@@ -56,9 +56,9 @@ class Agent():
 # predator class which just saves a location and has tools to update this
 class Predator():
     def __init__(self):
-        self.x = 0
-        self.y = 0
-        self.z = 0
+        self.x = 50
+        self.y = 50
+        self.z = 100
 
     def info(self):
         return self.x, self.y, self.z
