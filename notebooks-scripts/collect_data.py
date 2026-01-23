@@ -25,24 +25,46 @@ def get_final_coordinates(
     return final_coordinates
 
 """
-Test for range of neighbourhood size 2-7, run for 600 steps in total, 
-predator introduced at 100 steps and exits at 500, 
-save final coordinate data in for DBSCAN analysis
+Test for range of neighbourhood size 2-11, run for 601 steps in total, 
+predator introduced at 100 steps and exits at 600, 
+save final coordinate data at step 601 in csv for DBSCAN analysis
+Repeat for total 30 runs each configuration
 """
-final_positions = {}
+rows_save = []
 
-for nearest_x in range(2, 8):
-    final_coords = get_final_coordinates(300, 7, 0.3, 0.3, 0.3, 0.1, 100, 500, 600)
+N_RUNS = 30
 
-    final_positions[nearest_x] = final_coords
+for nearest_x in range(2, 12):
+    for run in range(N_RUNS):
+        print(f"run={run+1}, nearest_x={nearest_x}")
+        final_coords = get_final_coordinates(
+            200,
+            nearest_x,
+            0.3,
+            0.3,
+            0.3,
+            0.1,
+            100,
+            600,
+            601
+        )
 
-for nearest_x, positions in final_positions.items():
-    np.save(f"neighbours_{nearest_x}.npy", positions)
+        for row in final_coords:
+            rows_save.append([
+                nearest_x,
+                run,
+                int(row[0]),  # agent_id
+                row[1],
+                row[2],
+                row[3]
+            ])
+    print("-end-")
 
-# test 
-coords = np.load("neighbours_3.npy")
-print(coords.shape)  
-print(coords[:5])     
+rows_save = np.array(rows_save)
 
-
-
+np.savetxt(
+    "final_positions.csv",
+    rows_save,
+    delimiter=",",
+    header="nearest_x,run,agent_id,x,y,z",
+)
