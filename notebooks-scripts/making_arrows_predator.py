@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import pyvista as pv 
 
-from agent_class import Agent, Predator  # Predator not used for now
+from agent_class_predator import Agent, Predator  # Predator not used for now
 from wall_fix import wall_vec
 
 # --- Pyvista Visualisation --- 
@@ -15,59 +15,61 @@ class PyVistaViewer:
     def __init__(self, sim, arrow_scale=2.0, smoothing=0.2):
         self.sim = sim
         self.arrow_scale = arrow_scale
-        self.alpha = smoothing   # smoothing factor (0.1–0.3 recommended)
+        self.alpha = smoothing   # smoothing factor
 
-        # Initial positions & velocities
+        # Initial positions & velocities (birds)
         positions = np.array([agent.output_last()[:3] for agent in sim.agents])
         velocities = np.array([agent.output_last()[3:6] for agent in sim.agents])
-
-        # Normalize velocities
         speeds = np.linalg.norm(velocities, axis=1, keepdims=True) + 1e-8
         velocities = velocities / speeds
-
-        # Store smoothed render velocity
         self.render_velocity = velocities.copy()
 
-        # Create point cloud
+        # Bird cloud
         self.cloud = pv.PolyData(positions)
         self.cloud["velocity"] = self.render_velocity
 
-        # Create initial glyphs
         arrows = self.cloud.glyph(
             orient="velocity",
             scale=False,
             factor=self.arrow_scale
         )
 
-        # Plotter
+        # create plotter
         self.plotter = pv.Plotter()
         self.plotter.set_background("black")
         self.plotter.add_axes()
 
+        # Add bird arrows
         self.actor = self.plotter.add_mesh(arrows, color="white")
+
+        # --- Predator arrow (single) ---
+        self.predator_cloud = pv.PolyData(np.array([[0.0, 0.0, 0.0]]))
+        self.pred_render_velocity = np.array([[1.0, 0.0, 0.0]])  # smoothed predator velocity
+        self.predator_cloud["velocity"] = self.pred_render_velocity
+
+        pred_arrow = self.predator_cloud.glyph(
+            orient="velocity",
+            scale=False,
+            factor=self.arrow_scale * 3.0
+        )
+
+        self.pred_actor = self.plotter.add_mesh(pred_arrow, color="red")
+
         self.plotter.show(interactive_update=True)
 
     def update(self):
-        # Get new physics state
+        # --- Birds ---
         positions = np.array([agent.output_last()[:3] for agent in self.sim.agents])
         raw_vel = np.array([agent.output_last()[3:6] for agent in self.sim.agents])
 
-        # Normalize raw velocity
         speed = np.linalg.norm(raw_vel, axis=1, keepdims=True)
-        speed = np.maximum(speed, 0.05)  # clamp to avoid flipping
+        speed = np.maximum(speed, 1e-8)  # avoid divide by zero
         raw_vel = raw_vel / speed
 
-        # Exponential smoothing (THIS is the key)
-        self.render_velocity = (
-            (1.0 - self.alpha) * self.render_velocity +
-            self.alpha * raw_vel
-        )
+        self.render_velocity = (1.0 - self.alpha) * self.render_velocity + self.alpha * raw_vel
+        norms = np.linalg.norm(self.render_velocity, axis=1, keepdims=True) + 1e-8
+        self.render_velocity /= norms
 
-        # Re-normalize after smoothing
-        speed = np.linalg.norm(self.render_velocity, axis=1, keepdims=True) + 1e-8
-        self.render_velocity = self.render_velocity / speed
-
-        # Update geometry
         self.cloud.points = positions
         self.cloud["velocity"] = self.render_velocity
 
@@ -76,12 +78,34 @@ class PyVistaViewer:
             scale=False,
             factor=self.arrow_scale
         )
-
         self.actor.mapper.SetInputData(arrows)
+
+        # --- Predator ---
+        pred_state = self.sim.predator_state()
+        if pred_state is not None:
+            pred_pos, pred_vel = pred_state
+
+            speed = np.linalg.norm(pred_vel)
+            if speed > 1e-8:
+                pred_vel = pred_vel / speed
+            else:
+                pred_vel = self.pred_render_velocity[0]  # keep previous direction if too small
+
+            # Exponential smoothing
+            self.pred_render_velocity = (1.0 - self.alpha) * self.pred_render_velocity + self.alpha * pred_vel.reshape(1,3)
+            self.pred_render_velocity /= np.linalg.norm(self.pred_render_velocity) + 1e-8
+
+            self.predator_cloud.points = pred_pos.reshape(1,3)
+            self.predator_cloud["velocity"] = self.pred_render_velocity
+
+            pred_arrow = self.predator_cloud.glyph(
+                orient="velocity",
+                scale=False,
+                factor=self.arrow_scale * 3.0
+            )
+            self.pred_actor.mapper.SetInputData(pred_arrow)
+
         self.plotter.update()
-
-
-
 
 class Simulation:
     def __init__(
@@ -192,6 +216,14 @@ class Simulation:
             and self.predator is not None
             and self.timestep >= self.pred_intro
         )
+    
+    def predator_state(self):
+        if self.predator is None:
+            return None
+        return (
+            np.array(self.predator.info()),
+            self.predator.velocity()
+        )
 
     # --- Predator reaction ---
     def bird_react_to_predator(self, bird_pos, pred_pos, effective_dist):
@@ -262,7 +294,14 @@ class Simulation:
         if self.predator_enabled and self.timestep == self.pred_intro:
             self.predator = Predator()
             start_pos = np.random.uniform(0, 100, size=3)
+
+            # fake previous position so velocity exists
+            self.predator.x = start_pos[0] - 1.0
+            self.predator.y = start_pos[1]
+            self.predator.z = start_pos[2]
+
             self.predator.update(*start_pos)
+
 
         if predator_active:
             px, py, pz = self.predator.info()
@@ -290,7 +329,7 @@ sim = Simulation(
     alignment_scale=2.0,
     separation_scale=1.0,
     noise_scale=0.1,
-    predator_enabled=False, 
+    predator_enabled=True, 
     predator_area=50,
     pred_intro=50
 )
