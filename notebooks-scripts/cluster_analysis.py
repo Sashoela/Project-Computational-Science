@@ -13,11 +13,11 @@ df = pd.read_csv("final_positions.csv")
 
 results = []
 
-for nearest_x in sorted(df["nearest_x"].unique()):
+for x in sorted(df["nearest_x"].unique()):
+    print(f"Processing nearest_x = {x}")
     for run in sorted(df["run"].unique()):
-
         subset = df[
-            (df["nearest_x"] == nearest_x) &
+            (df["nearest_x"] == x) &
             (df["run"] == run)
         ]
 
@@ -34,7 +34,7 @@ for nearest_x in sorted(df["nearest_x"].unique()):
         n_noise = np.sum(labels == -1)
 
         results.append({
-            "nearest_x": nearest_x,
+            "nearest_x": x,
             "run": run,
             "n_clusters": n_clusters,
             "n_noise": n_noise
