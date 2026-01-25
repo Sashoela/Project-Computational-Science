@@ -74,7 +74,8 @@ class Simulation:
         noise_scale=0.3,
         predator_area=50,
         pred_intro=50, 
-        predator_enabled = True
+        predator_enabled = True,
+        perception_radius = 15.0
     ):
         self.timestep = 0
         self.N_birds = N_birds
@@ -87,6 +88,7 @@ class Simulation:
         self.pred_intro = pred_intro
         self.predator_enabled = predator_enabled
         self.predator = None
+        self.perception_radius = perception_radius
 
         # Initialize agents
         self.agents = [Agent(i) for i in range(N_birds)]
@@ -98,10 +100,6 @@ class Simulation:
 
     # --- Nearest neighbors with forward-facing vision ---
     def nearest_x_ids(self, positions, agent_ids, num_neighbors, current_index, fov_cos=0.5):
-        """
-        Find nearest neighbors in front of the bird.
-        fov_cos: cosine of the field of view angle (e.g., 0.5 ~ 60° forward cone)
-        """
         current_pos = positions[current_index]
         current_vel = self.agents[current_index].output_last()[3:6]
         current_vel_norm = current_vel / np.linalg.norm(current_vel)
@@ -112,15 +110,22 @@ class Simulation:
                 continue
             vec_to_neighbor = pos - current_pos
             dist = np.linalg.norm(vec_to_neighbor)
-            if dist == 0:
+            if dist == 0 or dist > self.perception_radius:  # <-- clamp to perception radius
                 continue
             vec_to_neighbor /= dist  # normalize
-            # Only include neighbor if it’s roughly in front
             if np.dot(current_vel_norm, vec_to_neighbor) >= fov_cos:
                 distances.append((dist, agent_ids[i]))
 
         # sort and pick closest num_neighbors
-        return [agent_id for _, agent_id in sorted(distances, key=lambda x: x[0])[:num_neighbors]]
+        neighbors = [agent_id for _, agent_id in sorted(distances, key=lambda x: x[0])[:num_neighbors]]
+
+        # Fallback: if no neighbors in front, pick nearest within perception radius
+        if not neighbors:
+            fallback_ids = [i for i, pos in enumerate(positions)
+                            if i != current_index and np.linalg.norm(pos - current_pos) <= self.perception_radius]
+            neighbors = random.sample(fallback_ids, min(num_neighbors, len(fallback_ids)))
+
+        return neighbors
 
 
     # --- Boids Rules ---
@@ -268,11 +273,12 @@ sim = Simulation(
     nearest_neighbors=7,
     cohesion_scale=2.0,
     alignment_scale=2.0,
-    separation_scale=0.75,
+    separation_scale=1,
     noise_scale=0.1,
-    predator_enabled=False, 
+    predator_enabled=True, 
     predator_area=50,
-    pred_intro=50
+    pred_intro=50,
+    perception_radius=100
 )
 
 viewer = PyVistaViewer(sim)
