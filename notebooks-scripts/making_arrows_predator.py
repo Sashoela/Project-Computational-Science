@@ -325,10 +325,10 @@ class Simulation:
 sim = Simulation(
     N_birds=200,
     nearest_neighbors=7,
-    cohesion_scale=2.0,
+    cohesion_scale=3.0,
     alignment_scale=2.0,
-    separation_scale=1.0,
-    noise_scale=0.1,
+    separation_scale=0.8,
+    noise_scale=0.05,
     predator_enabled=True, 
     predator_area=50,
     pred_intro=50
