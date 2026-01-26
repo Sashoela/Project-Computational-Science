@@ -175,16 +175,25 @@ class Simulation():
             j.append(y)
             k.append(z)
 
-        if self.timestep > self.pred_intro:
-            x, y, z = self.predator.info()
-            i.append(x)
-            j.append(y)
-            k.append(z)
-            print(x, y, z)
+        ax.cla()  # Clear axes for redraw
+        ax.set_xlim(0, 100)
+        ax.set_ylim(0, 100)
+        ax.set_zlim(0, 100)
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_zlabel("z")
 
-        scat._offsets3d = (i, j, k)
+        # Plot all birds
+        ax.scatter(i, j, k, c='blue', s=10)
+
+        # Plot predator(s) in red if exists
+        if hasattr(self, 'predator'):
+            pred_x, pred_y, pred_z = self.predator.info()
+            ax.scatter([pred_x], [pred_y], [pred_z], c='red', s=50)  # bigger red dot
+
+        plt.pause(0.05)
         fig.canvas.draw_idle()
-        plt.pause(0.05)           
+     
         
 
     def dump(self):
