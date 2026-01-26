@@ -243,20 +243,20 @@ class Simulation():
             
 
 
-# test code
-sim = Simulation(100, 7, 0.3, 0.3, 0.3, 0.1, 50, 600)
-plt.ion()
-fig = plt.figure()
-ax = fig.add_subplot(111, projection = "3d")
-ax.set_xlim(0, 100)
-ax.set_ylim(0, 100)
-ax.set_zlim(0, 100)
-ax.set_xlabel("x")
-ax.set_ylabel("y")
-ax.set_zlabel("z")
-scat = ax.scatter([], [], [], s = 5)
-for i in range(400):
-    sim.step()
-    sim.show()
-plt.ioff()
-plt.show()
+##### test code
+# sim = Simulation(100, 7, 0.3, 0.3, 0.3, 0.1, 50, 600)
+# plt.ion()
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection = "3d")
+# ax.set_xlim(0, 100)
+# ax.set_ylim(0, 100)
+# ax.set_zlim(0, 100)
+# ax.set_xlabel("x")
+# ax.set_ylabel("y")
+# ax.set_zlabel("z")
+# scat = ax.scatter([], [], [], s = 5)
+# for i in range(400):
+#     sim.step()
+#     sim.show()
+# plt.ioff()
+# plt.show()
