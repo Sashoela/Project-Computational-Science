@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial import ConvexHull
 
 #run simulation
-sim = Simulation(400, 7, 0.3, 0.3, 0.3, 0.1, 600, 600)
+sim = Simulation(200, 7, 0.3, 0.35, 0.25, 0.1, 600, 600)
 for _ in range(150):
     sim.step()
 x, y, z = sim.dump()
@@ -27,12 +27,14 @@ def distance_to_hull(point, hull):
 # avg_y = (max(y) + min(y)) / 2
 # avg_z = (max(z) + min(z)) / 2
 
-#check distance to center of mass and nearest neighbour for each agent
+#check distance to border and density for each agent for a number of simulations
 dist_to_border = []
-dist_to_neighbour = []
+density = []
+
+
 for n in range(len(x)): # n is current bird
     #check against others
-    dist = []
+    dens = 0
     for m in range(len(x)):
         if n != m:
             d = np.sqrt(
@@ -40,21 +42,19 @@ for n in range(len(x)): # n is current bird
                 (y[n] - y[m])**2 +
                 (z[n] - z[m])**2
             )
-            dist.append(d)
-    closest_neighbour = sorted(dist)[0]
+            if d <= 2:
+                dens += 1
+    density.append(dens)
     #dist to border
     to_border = distance_to_hull(points[n], hull)
-    if closest_neighbour >= 3 and to_border <= 3:
-        pass
-    else:
-        dist_to_neighbour.append(closest_neighbour)
-        dist_to_border.append(to_border)
+
+    dist_to_border.append(to_border)
 
 #plot and fit
-a, b = np.polyfit(dist_to_border, dist_to_neighbour, 1)
-plt.scatter(dist_to_border, dist_to_neighbour)
+a, b = np.polyfit(dist_to_border, density, 1)
+plt.scatter(dist_to_border, density)
 plt.plot(dist_to_border, a * np.array(dist_to_border) + b, 'r-', label=f"best fit, a = {a}")
 plt.xlabel("distance to border")
-plt.ylabel("distance to nearest neighbour")
+plt.ylabel("local density")
 plt.legend(loc = "best")
 plt.show()
