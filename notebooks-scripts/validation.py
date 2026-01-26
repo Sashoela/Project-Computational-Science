@@ -1,7 +1,7 @@
 from simulation_class import Simulation
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import stats
+from scipy.optimize import curve_fit
 import alphashape
 import trimesh
 from sklearn.neighbors import NearestNeighbors
@@ -11,6 +11,9 @@ def auto_alpha(points, k=6, scale=1.5):
     dists, _ = nbrs.kneighbors(points)
     mean_nn_dist = dists[:,1:].mean()  # skip self distance
     return scale / mean_nn_dist
+
+def inv_model(x, a):
+    return a / x
 
 #check distance to border and density for each agent for a number of simulations
 dist_to_border = []
@@ -51,16 +54,23 @@ for i in range(10):
         dist_to_border.append(distances[n])
 
 #plot and fit
-best_fit = stats.linregress(dist_to_border, density)
+dist_to_border = np.array(dist_to_border)
+density = np.array(density)
+mask = dist_to_border > 0
+params, cov = curve_fit(inv_model, dist_to_border[mask], density[mask])
+a = params[0]
+x_fit = np.linspace(dist_to_border.min(), dist_to_border.max(), 300)
+y_fit = inv_model(x_fit, a)
+
 # plt.scatter(dist_to_border, density, alpha = 0.2)
 plt.hexbin(dist_to_border, density, gridsize=50, cmap="viridis")
 plt.colorbar(label="count")
-plt.plot(dist_to_border, best_fit.slope * np.array(dist_to_border) + best_fit.intercept, 'r-', label=f"best fit, a = {best_fit.slope}")
+#plt.plot(dist_to_border, best_fit.slope * np.array(dist_to_border) + best_fit.intercept, 'r-', label=f"best fit, a = {best_fit.slope}")
+plt.plot(x_fit, y_fit, color="red", lw=2, label=r"fit: $a/x$")
 plt.xlabel("distance to border")
 plt.ylabel("local density")
 plt.ylim(0, max(density))
 plt.legend(loc = "best")
-plt.title(f"r^2 = {best_fit.rvalue**2}")
-plt.show()
+#plt.title(f"r^2 = {best_fit.rvalue**2}")
 
-plt.savefig("density_validation2.png")
+plt.savefig("density_validation3.png")
