@@ -10,9 +10,6 @@ from agent_class import Agent, Predator
 from wall_fix import wall_vec
 from pyvista_class import *
 
-# ============================================================
-# SIMULATION 
-# ============================================================
 
 class Simulation:
     """
@@ -139,11 +136,11 @@ class Simulation:
         if not neighbor_ids:
             return np.zeros(3)
 
-        agent_pos = self.agents[agent_index].output_last()[:3]
+        agent_pos = np.array(self.agents[agent_index].output_last()[:3])
         sep_vec = np.zeros(3)
 
         for nid in neighbor_ids:
-            neighbor_pos = self.agents[nid].output_last()[:3]
+            neighbor_pos = np.array(self.agents[nid].output_last()[:3])
             diff = agent_pos - neighbor_pos
             dist = np.linalg.norm(diff)
 
@@ -280,3 +277,22 @@ class Simulation:
 
         self.timestep += 1
 
+
+# --- Run Simulation ---
+sim = Simulation(
+    N_birds=200,
+    nearest_neighbors=7,
+    cohesion_scale=2.0,
+    alignment_scale=2.0,
+    separation_scale=0.75,
+    noise_scale=0.1,
+    predator_enabled=False, 
+    predator_area=50,
+    pred_intro=50
+)
+
+viewer = PyVistaViewer(sim)
+
+for _ in range(1000):
+    sim.step()
+    viewer.update()
