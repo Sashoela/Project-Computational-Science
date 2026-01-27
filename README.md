@@ -10,28 +10,28 @@ structure of a computational science workflow: model definition, simulation,
 analysis, and results.
 
 ---
+## For required libaries and version see "requirements.txt"
 
-## Project Structure
+##### How to reproduce figure from poster:  #####
+
+## File Structure
 .
-├── data/
-├── notebooks/
-│ ├── 01_model_setup.ipynb
-│ ├── 02_simulation.ipynb
-│ ├── 03_analysis.ipynb
-│ └── 04_results.ipynb
+├── pyvisa/
+├── notebooks-scripts/
+│ ├── agent_class.py
+│ ├── simulation_class.py
+│ ├── validation_dens_aggr.py
+│ └── wall.py
 ├── results/images
 ├── requirements.txt
 └── README.md
 
 ---
 
-### `01_model_setup.ipynb`
-Defines the agent-based model, including:
-- Representation of individual birds (agents)
-- Model parameters
-- Interaction rules (alignment, cohesion, separation)
-- Assumptions and simplifications
-
+### `agent_class.py`
+Defines the bird and predator agents:
+- agent class; saves location and speed of agent. has functions to output and change these.
+- predator class; only saves location. functions to output and change these.
 No full simulations are run in this notebook.
 
 ---
