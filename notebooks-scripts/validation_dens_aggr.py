@@ -78,4 +78,4 @@ plt.xscale("log")
 plt.yscale("log")
 plt.legend(loc = "best")
 
-plt.savefig("density_validation4.png")
+plt.savefig("density_validation5.png")
