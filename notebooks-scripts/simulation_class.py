@@ -339,7 +339,7 @@ class Simulation():
         else:
             return np.array([0.0, 0.0, 0.0])
 
-
+'''
 # ---------------- TEST CODE ----------------
 sim = Simulation(
     200, 7, 0.3, 0.3, 0.3, 0.1,
@@ -366,3 +366,4 @@ for _ in range(400):
 
 plt.ioff()
 plt.show()
+'''
