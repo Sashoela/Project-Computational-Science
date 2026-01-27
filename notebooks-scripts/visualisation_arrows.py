@@ -20,24 +20,24 @@ class PyVistaViewer:
         self.plotter.set_background("black")
 
         # --- Birds as arrows (glyphs) ---
-        P = np.array([a.output_last()[:3] for a in sim.agents], dtype=float)
-        V = np.array([a.output_last()[3:6] for a in sim.agents], dtype=float)
+        bird_positions = np.array([a.output_last()[:3] for a in sim.agents], dtype=float)
+        bird_velocities = np.array([a.output_last()[3:6] for a in sim.agents], dtype=float)
 
-        self.cloud = pv.PolyData(P)
-        self.cloud["vel"] = V
+        self.cloud = pv.PolyData(bird_positions)
+        self.cloud["vel"] = bird_velocities
 
-        # arrow source (you can tweak tip/shaft sizes)
         self.arrow_src = pv.Arrow()
 
-        # initial glyphs
+        # initialising cloud of glyphs
         self.glyphs = self.cloud.glyph(
             orient="vel",
-            scale=False,          # keep same arrow size, not scaled by |v|
+            scale=False,         
             geom=self.arrow_src
         )
+
         self.bird_actor = self.plotter.add_mesh(self.glyphs, color="white")
 
-        # --- Predator sphere ---
+        # --- Predator ---
         self.predator_mesh = pv.Sphere(radius=2.0)
         self.predator_actor = self.plotter.add_mesh(self.predator_mesh, color="red")
         self.predator_actor.SetVisibility(False)
@@ -45,28 +45,21 @@ class PyVistaViewer:
         self.plotter.show(interactive_update=True)
 
     def update(self):
-        # update bird positions + velocities
-        P = np.array([a.output_last()[:3] for a in self.sim.agents], dtype=float)
-        V = np.array([a.output_last()[3:6] for a in self.sim.agents], dtype=float)
+        bird_positions = np.array([a.output_last()[:3] for a in self.sim.agents], dtype=float)
+        bird_velocities = np.array([a.output_last()[3:6] for a in self.sim.agents], dtype=float)
 
-        self.cloud.points = P
-        self.cloud["vel"] = V
+        self.cloud.points = bird_positions
+        self.cloud["vel"] = bird_velocities
 
-        # regenerate glyph geometry (simple + reliable)
-        self.glyphs = self.cloud.glyph(
-            orient="vel",
-            scale=False,
-            geom=self.arrow_src
-        )
+        self.glyphs = self.cloud.glyph(orient="vel", scale=False, geom=self.arrow_src)
 
-        # swap mapper input to new glyph polydata
         self.bird_actor.mapper.SetInputData(self.glyphs)
 
-        # predator visibility + position (matches your Simulation logic safely)
+        # Predator
         predator_exists = hasattr(self.sim, "predator")
-        predator_in_window = (self.sim.pred_intro <= self.sim.timestep <= self.sim.pred_exit_time)
+        predator_active = (self.sim.timestep >= self.sim.pred_intro) and (self.sim.timestep <= self.sim.pred_exit_time)
 
-        if predator_exists and predator_in_window:
+        if predator_exists and predator_active:
             x, y, z = self.sim.predator.info()
             self.predator_actor.SetPosition(x, y, z)
             self.predator_actor.SetVisibility(True)
@@ -74,6 +67,8 @@ class PyVistaViewer:
             self.predator_actor.SetVisibility(False)
 
         self.plotter.update()
+
+
 
 
 class Simulation():

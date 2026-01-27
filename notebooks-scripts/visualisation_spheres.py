@@ -39,7 +39,6 @@ class PyVistaViewer:
         positions = np.array([agent.output_last()[:3] for agent in self.sim.agents])
         self.cloud.points = positions
 
-        # Predator (match Simulation: only exists after intro; active only in window)
         predator_exists = hasattr(self.sim, "predator") and (self.sim.predator is not None)
         predator_in_window = (self.sim.pred_intro <= self.sim.timestep <= self.sim.pred_exit_time)
 
