@@ -75,14 +75,7 @@ class Simulation():
             predx, predy, predz = self.predator.info()
             vector = np.array([0.0, 0.0, 0.0], dtype=np.float64)
             # use i, j and k list with all bird info from earlier in the step function
-            '''vector = np.array([0, 0, 0], dtype = np.float64)
-            for a in range(len(i)):
-                dist = np.sqrt(((predx - i[a]) ** 2) + ((predy - j[a]) ** 2) + ((predz - k[a]) ** 2))
-                # if within "range" add vector to this bird to total
-                if dist < self.predator_area:
-                    vec = np.array([i[a] - predx, j[a] - predy, k[a] - predz], dtype = np.float64)
-                    vec = vec / np.linalg.norm(vec)
-                    vector += vec'''
+            # find bins with most birds and move toward that bin
             listed=[]
             bin=10
             for a in range(0,9):
