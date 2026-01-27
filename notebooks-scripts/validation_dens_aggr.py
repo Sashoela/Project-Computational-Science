@@ -6,6 +6,8 @@ import alphashape
 import trimesh
 from sklearn.neighbors import NearestNeighbors
 
+amount_of_sims = 10
+
 def auto_alpha(points, k=6, scale=1.5):
     nbrs = NearestNeighbors(n_neighbors=k+1).fit(points)
     dists, _ = nbrs.kneighbors(points)
@@ -19,7 +21,7 @@ def inv_model(x, a):
 dist_to_border = []
 density = []
 
-for i in range(10):
+for i in range(amount_of_sims):
     #run simulation
     x, y, z = 0, 0, 0
     sim = Simulation(200, 7, 0.3, 0.35, 0.25, 0.1, 600, 600)
