@@ -7,7 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import pyvista as pv 
 
 from agent_class import Agent, Predator 
-from wall_fix import wall_vec
+from wall import wall_vec
 from pyvista_class import *
 
 
