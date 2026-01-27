@@ -173,7 +173,6 @@ class Simulation():
             i.append(x)
             j.append(y)
             k.append(z)
-            print(x, y, z)
 
         scat._offsets3d = (i, j, k)
         fig.canvas.draw_idle()
