@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 
-df = pd.read_csv("final_positions.csv")
+df = pd.read_csv("final_positions_multi_step_sasha_1.csv")
 
 results = []
 
@@ -36,14 +36,18 @@ for x in sorted(df["nearest_x"].unique()):
         results.append({
             "nearest_x": x,
             "run": run,
+            "step": step,
             "n_clusters": n_clusters,
             "n_noise": n_noise
         })
 
 results_df = pd.DataFrame(results)
-results_df.to_csv("dbscan_cluster_distributions.csv", index=False)
+results_df.to_csv("dbscan_cluster_distributions_multi_step_sasha_1.csv", index=False)
 
 print(results_df.head())
+
+df = pd.read_csv("final_positions_multi_step_sasha_1.csv")
+df.columns = df.columns.str.strip()
 
 
 # add box plot
