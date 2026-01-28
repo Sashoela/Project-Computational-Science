@@ -4,6 +4,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from collections import defaultdict
 
 # import our own functions
 from agent_class import Agent, Predator
@@ -11,17 +12,7 @@ from wall import wall_vec
 
 
 class Simulation():
-    def __init__(
-        self,
-        N_birds, nearest_x,
-        coh_vector_scale, ali_vector_scale, sep_vector_scale, noise_vector_scale,
-        pred_intro_time, pred_exit_time,
-        *,
-        # ---- NEW: flock flattening params ----
-        cluster_R=6.0,
-        min_flock_size=25,
-        flatten_strength=0.05,
-    ):
+    def __init__(self, N_birds, nearest_x, coh_vector_scale, ali_vector_scale, sep_vector_scale, noise_vector_scale, pred_intro_time, pred_exit_time):
         # needed variables
         self.timestep = 0
         self.N_birds = N_birds
@@ -34,11 +25,6 @@ class Simulation():
         self.pred_intro = pred_intro_time
         self.pred_exit_time = pred_exit_time
 
-        # NEW: flattening settings
-        self.cluster_R = float(cluster_R)
-        self.min_flock_size = int(min_flock_size)
-        self.flatten_strength = float(flatten_strength)
-
         # initialize birds in a list
         self.agents = [Agent(i) for i in range(N_birds)]
 
@@ -47,83 +33,11 @@ class Simulation():
             v = np.random.normal(size=3)
             unit_v = v / np.linalg.norm(v)
             agent.setup(
-                random.uniform(40, 60), random.uniform(40, 60), random.uniform(40, 60),
+                random.uniform(40, 60),
+                random.uniform(40, 60),
+                random.uniform(40, 60),
                 unit_v[0], unit_v[1], unit_v[2]
             )
-
-    # ---------------- utilities (NEW small helpers) ----------------
-    @staticmethod
-    def safe_unit(v, eps=1e-12):
-        n = np.linalg.norm(v)
-        return v / n if n > eps else np.zeros_like(v)
-
-    def get_positions_and_ids(self):
-        P = []
-        ids = []
-        for a in self.agents:
-            x, y, z, vx, vy, vz, bird_id = a.output_last()
-            P.append([x, y, z])
-            ids.append(bird_id)
-        return np.array(P, dtype=float), ids
-
-    def get_components(self, P, R):
-        """Connected components under distance threshold R (correct: compare to R^2)."""
-        N = len(P)
-        R2 = R * R
-        adj = [[] for _ in range(N)]
-
-        for a in range(N):
-            pa = P[a]
-            for b in range(a + 1, N):
-                d2 = np.sum((pa - P[b]) ** 2)
-                if d2 <= R2:
-                    adj[a].append(b)
-                    adj[b].append(a)
-
-        seen = np.zeros(N, dtype=bool)
-        comps = []
-        for start in range(N):
-            if seen[start]:
-                continue
-            stack = [start]
-            seen[start] = True
-            comp = []
-            while stack:
-                u = stack.pop()
-                comp.append(u)
-                for v in adj[u]:
-                    if not seen[v]:
-                        seen[v] = True
-                        stack.append(v)
-            comps.append(comp)
-        return comps
-
-    def flock_plane_normal_and_com(self, P_sub):
-        com = P_sub.mean(axis=0)
-        P0 = P_sub - com
-        C = np.cov(P0.T, bias=True)
-        w, V = np.linalg.eigh(C)
-        normal = V[:, np.argmin(w)]   # thickness direction
-        normal = self.safe_unit(normal)
-        return com, normal
-
-    def flatten_forces_by_flock(self, P, ids, comps):
-        """
-        Returns dict: bird_id -> flattening force (3,)
-        """
-        flat_forces = {}
-        for comp in comps:
-            if len(comp) < self.min_flock_size:
-                continue
-            P_sub = P[comp]
-            com, normal = self.flock_plane_normal_and_com(P_sub)
-
-            for idx in comp:
-                r = P[idx] - com
-                dist = float(np.dot(r, normal))  # signed distance from flock plane
-                bird_id = ids[idx]
-                flat_forces[bird_id] = (-dist * normal) * self.flatten_strength
-        return flat_forces
 
     # --- Boids Rules ---
     def cohesion(self, agent_index, neighbor_ids):
@@ -152,6 +66,53 @@ class Simulation():
                 sep_vec += diff / dist
         return sep_vec
 
+    # ---- validation helpers (NEW) ----
+    @staticmethod
+    def flock_dimensions_I_from_positions(P):
+        """
+        P: Nx3 positions array.
+        Returns I1<I2<I3 as PCA-axis extents (max-min).
+        """
+        P = np.asarray(P, dtype=float)
+        P = P - P.mean(axis=0)
+
+        C = np.cov(P.T, bias=True)
+        w, V = np.linalg.eigh(C)
+        V = V[:, np.argsort(w)]  # thin -> long axes
+
+        proj = P @ V
+        extents = [proj[:, a].max() - proj[:, a].min() for a in range(3)]
+        I1, I2, I3 = sorted(extents)
+        return I1, I2, I3
+
+    def validate_ratios(self, start_step=20, stride=5):
+        """
+        Uses ALL birds (single flock assumption).
+        Samples timesteps t >= start_step and every `stride` steps.
+        Stores ratios in self.validation_samples and returns summary dict.
+        """
+        xs, ys, zs = [], [], []
+        for agent in self.agents:
+            x, y, z, vx, vy, vz, _id = agent.output_last()
+            xs.append(x); ys.append(y); zs.append(z)
+
+        P = np.column_stack([xs, ys, zs])
+        I1, I2, I3 = self.flock_dimensions_I_from_positions(P)
+
+        r21 = (I2 / I1) if I1 > 1e-12 else np.nan
+        r31 = (I3 / I1) if I1 > 1e-12 else np.nan
+
+        if not hasattr(self, "validation_samples"):
+            self.validation_samples = []  # list of dicts
+
+        self.validation_samples.append({
+            "t": self.timestep,
+            "I1": I1, "I2": I2, "I3": I3,
+            "r21": r21, "r31": r31
+        })
+
+        return {"t": self.timestep, "r21": r21, "r31": r31}
+
     def step(self):
         # variables used to find nearest birds
         i, j, k, ids = [], [], [], []
@@ -162,7 +123,7 @@ class Simulation():
             k.append(z)
             ids.append(d)
 
-        # predator movement (unchanged)
+        # predator movement
         if self.timestep == self.pred_intro:
             self.predator = Predator()
         if self.timestep > self.pred_intro:
@@ -176,19 +137,19 @@ class Simulation():
                     for c in range(0, 9):
                         amount = 0
                         for d in range(0, len(i)):
-                            if (bin*a <= i[d] <= bin*(a+1) and bin*b <= j[d] <= bin*(b+1) and bin*c <= k[d] <= bin*(c+1)):
+                            if (bin * a <= i[d] <= bin * (a + 1) and
+                                bin * b <= j[d] <= bin * (b + 1) and
+                                bin * c <= k[d] <= bin * (c + 1)):
                                 amount += 1
-                        listed.append((amount, bin*a + bin/2, bin*b + bin/2, bin*c + bin/2))
+                        listed.append((amount, bin * a + bin / 2, bin * b + bin / 2, bin * c + bin / 2))
 
             listed_sorted = sorted(listed, key=lambda x: x[0], reverse=True)
             top3 = listed_sorted[:3]
-
             distances = []
             for m in range(0, 3):
                 g, a, b, c = top3[m]
-                d = np.sqrt((predx-a)**2 + (predy-b)**2 + (predz-c)**2)
+                d = np.sqrt((predx - a)**2 + (predy - b)**2 + (predz - c)**2)
                 distances.append((d, a, b, c))
-
             best_dist, best_a, best_b, best_c = min(distances, key=lambda x: x[0])
             coordinates = (best_a, best_b, best_c)
 
@@ -206,14 +167,9 @@ class Simulation():
                 movement = vector / np.linalg.norm(vector) * np.sqrt(2)
                 self.predator.update(predx + movement[0], predy + movement[1], predz + movement[2])
 
-        # NEW: compute flattening forces once per step (minimal extra work)
-        P, ids2 = self.get_positions_and_ids()
-        comps = self.get_components(P, self.cluster_R)
-        flat_forces = self.flatten_forces_by_flock(P, ids2, comps)
-
         self.timestep += 1
 
-        # update all agents
+        # make a loop to update all agents (loop over all birds)
         for agent in self.agents:
             x, y, z, vx, vy, vz, id = agent.output_last()
 
@@ -242,6 +198,7 @@ class Simulation():
             noise = np.random.normal(size=3)
             scaled_noise = noise / np.linalg.norm(noise) * self.noise_vector_scale
 
+            # total movement :
             if any(react_pred_vec):
                 total_vec = react_pred_vec + scaled_noise
             else:
@@ -249,21 +206,11 @@ class Simulation():
                 total_vec = total_vec / np.linalg.norm(total_vec)
 
             wall = np.array(wall_vec(x, y, z, 5), dtype=np.float64)
+
             total_vec += wall
-
-            # NEW: add flattening force (0 if bird not in a big enough flock)
-            total_vec += flat_forces.get(id, np.array([0.0, 0.0, 0.0]))
-
-            # final normalize
-            total_vec = total_vec / np.linalg.norm(total_vec)
-
             agent.set_current(
-                x + total_vec[0],
-                y + total_vec[1],
-                z + total_vec[2],
-                total_vec[0],
-                total_vec[1],
-                total_vec[2]
+                x + total_vec[0], y + total_vec[1], z + total_vec[2],
+                total_vec[0], total_vec[1], total_vec[2]
             )
 
         for agent in self.agents:
@@ -273,15 +220,11 @@ class Simulation():
         i, j, k = [], [], []
         for agent in self.agents:
             x, y, z, vx, vy, vz, id = agent.output_last()
-            i.append(x)
-            j.append(y)
-            k.append(z)
+            i.append(x); j.append(y); k.append(z)
 
         if self.timestep > self.pred_intro:
             x, y, z = self.predator.info()
-            i.append(x)
-            j.append(y)
-            k.append(z)
+            i.append(x); j.append(y); k.append(z)
             print(x, y, z)
 
         scat._offsets3d = (i, j, k)
@@ -292,16 +235,13 @@ class Simulation():
         i, j, k = [], [], []
         for agent in self.agents:
             x, y, z, vx, vy, vz, id = agent.output_last()
-            i.append(x)
-            j.append(y)
-            k.append(z)
+            i.append(x); j.append(y); k.append(z)
         return i, j, k
 
     def nearest_x_ids(self, i, j, k, ids, near_x, initial_bird, fov_cos=0.5):
         n = initial_bird
         nr = len(i)
         items = []  # (distance, id)
-
         self_vel = np.array(self.agents[n].output_last()[3:6])
         self_vel = self_vel / np.linalg.norm(self_vel)
 
@@ -309,10 +249,8 @@ class Simulation():
             if m == n:
                 continue
             d = np.sqrt((i[n] - i[m])**2 + (j[n] - j[m])**2 + (k[n] - k[m])**2)
-
             vec_to_neighbour = np.array([i[m] - i[n], j[m] - j[n], k[m] - k[n]])
             vec_to_neighbour /= np.linalg.norm(vec_to_neighbour)
-
             if np.dot(self_vel, vec_to_neighbour) >= fov_cos:
                 items.append((d, ids[m]))
 
@@ -325,13 +263,11 @@ class Simulation():
         dist = np.sqrt((x - i)**2 + (y - j)**2 + (z - k)**2)
         if dist == 0:
             return np.array([0.0, 0.0, 0.0])
-
         dx, dy, dz = x - i, y - j, z - k
         direction = np.array([dx, dy, dz]) / dist
         closeness = 1.0 - (dist / effective_dist)
         beta = 5
         strength = (np.exp(beta * closeness) - 1.0) / (np.exp(beta) - 1.0)
-
         if dist <= effective_dist:
             min_speed, max_speed = 1.0, 2.0
             speed = min_speed + (max_speed - min_speed) * strength
@@ -340,44 +276,56 @@ class Simulation():
             return np.array([0.0, 0.0, 0.0])
 
 
-<<<<<<< Updated upstream
-# ---------------- TEST CODE ----------------
-sim = Simulation(
-    200, 7, 0.3, 0.3, 0.3, 0.1,
-    10, 330,
-    cluster_R=6.0,
-    min_flock_size=25,
-    flatten_strength=0.05
-)
+# ----- test + validation sampling -----
+sim = Simulation(400, 7, 0.3, 0.3, 0.3, 0.1, 600, 600)  # predator never really active
 
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
-=======
-##### test code
-sim = Simulation(400, 7, 0.3, 0.3, 0.3, 0.1, 600, 600)
-plt.ion()
-fig = plt.figure()
-ax = fig.add_subplot(111, projection = "3d")
->>>>>>> Stashed changes
 ax.set_xlim(0, 100)
 ax.set_ylim(0, 100)
 ax.set_zlim(0, 100)
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
-<<<<<<< Updated upstream
 scat = ax.scatter([], [], [], s=5)
 
-for _ in range(330):
+start_step = 20
+stride = 5
+steps = 400
+
+for _ in range(steps):
     sim.step()
     sim.show()
 
-=======
-scat = ax.scatter([], [], [], s = 5)
-for i in range(400):
-    sim.step()
-    sim.show()
->>>>>>> Stashed changes
+    # sample ratios starting from step 20, every 5 steps
+    if sim.timestep >= start_step and (sim.timestep - start_step) % stride == 0:
+        sim.validate_ratios(start_step=start_step, stride=stride)
+
 plt.ioff()
 plt.show()
+
+# ----- summary -----
+r21 = [d["r21"] for d in getattr(sim, "validation_samples", []) if np.isfinite(d["r21"])]
+r31 = [d["r31"] for d in getattr(sim, "validation_samples", []) if np.isfinite(d["r31"])]
+
+def ci95(x):
+    if len(x) < 2:
+        return np.nan
+    return 1.96 * np.std(x, ddof=1) / np.sqrt(len(x))
+
+print("\n=== VALIDATION (single flock, samples from t>=20 every 5 steps) ===")
+print("samples:", len(r21))
+if len(r21) >= 2:
+    print("I2/I1 = %.3f ± %.3f (95%% CI)" % (np.mean(r21), ci95(r21)))
+else:
+    print("I2/I1: not enough samples")
+
+if len(r31) >= 2:
+    print("I3/I1 = %.3f ± %.3f (95%% CI)" % (np.mean(r31), ci95(r31)))
+else:
+    print("I3/I1: not enough samples")
+
+# optional: print the first few samples
+for d in getattr(sim, "validation_samples", [])[:5]:
+    print(f"t={d['t']} r21={d['r21']:.3f} r31={d['r31']:.3f}")
