@@ -343,7 +343,7 @@ class Simulation():
 # ---------------- TEST CODE ----------------
 sim = Simulation(
     200, 7, 0.3, 0.3, 0.3, 0.1,
-    10, 600,
+    10, 330,
     cluster_R=6.0,
     min_flock_size=25,
     flatten_strength=0.05
@@ -360,7 +360,7 @@ ax.set_ylabel("y")
 ax.set_zlabel("z")
 scat = ax.scatter([], [], [], s=5)
 
-for _ in range(400):
+for _ in range(330):
     sim.step()
     sim.show()
 

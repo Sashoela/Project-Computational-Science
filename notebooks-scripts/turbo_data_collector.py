@@ -51,8 +51,8 @@ save coordinate snapshots at multiple steps into ONE CSV with a step column.
 """
 rows_save = []
 
-N_RUNS = 30
-SAMPLE_STEPS = [601, 615, 630]
+N_RUNS = 12
+SAMPLE_STEPS = [301, 311, 321]
 
 # parameters you had
 N_BIRDS = 200
@@ -60,10 +60,10 @@ COH = 0.3
 ALI = 0.3
 SEP = 0.3
 NOISE = 0.1
-PRED_INTRO = 100
-PRED_EXIT = 600
+PRED_INTRO = 15
+PRED_EXIT = 300
 
-for nearest_x in range(2, 12):
+for nearest_x in range(3, 11):
     for run in range(N_RUNS):
         print(f"run={run+1}, nearest_x={nearest_x}")
 
