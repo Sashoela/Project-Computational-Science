@@ -3,15 +3,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
+from scipy.stats import pearsonr  # For correlation
 
 # ----------------------------
 # Load data
 # ----------------------------
 df = pd.read_csv("final_positions_multi_step.csv")
 
-# Identify the three snapshot steps
-steps = sorted(df["step"].unique())
-print("Snapshot steps:", steps)
+# ----------------------------
+# Use only the three snapshot steps
+# ----------------------------
+steps = [301, 311, 321]
+print("Using snapshot steps:", steps)
 
 # ----------------------------
 # Run DBSCAN clustering
@@ -64,10 +67,10 @@ for ax, step in zip(axes, steps):
     )
 
     ax.set_title(f"Step {int(step)}")
-    ax.set_xlabel("Neighbourhood size (nearest_x)")
-    ax.set_ylabel("Number of clusters")
+    ax.set_xlabel("nearest_x")
+    ax.set_ylabel("number of clusters")
 
-plt.suptitle("Cluster distribution vs neighbourhood size at different snapshots")
+plt.suptitle("Cluster distribution at step 301, 315, 330")
 plt.tight_layout()
 plt.show()
 
@@ -89,6 +92,7 @@ plt.scatter(
     label="Mean cluster count (all snapshots)"
 )
 
+# Fit linear trendline
 coeffs = np.polyfit(
     trend_data["nearest_x"],
     trend_data["n_clusters"],
@@ -106,12 +110,31 @@ plt.plot(
     x_vals,
     trend(x_vals),
     linestyle="--",
+    color="red",
     label="Linear trend"
 )
 
-plt.xlabel("Neighbourhood size (nearest_x)")
-plt.ylabel("Mean number of clusters")
-plt.title("Overall effect of neighbourhood size on clustering")
+# ----------------------------
+# Pearson correlation for trendline
+# ----------------------------
+r, p = pearsonr(results_df["nearest_x"], results_df["n_clusters"])
+plt.text(
+    0.05, 0.95,
+    f"Pearson r = {r:.2f}, p = {p:.3e}",
+    transform=plt.gca().transAxes,
+    verticalalignment='top'
+)
+
+plt.xlabel("nearest_x")
+plt.ylabel("mean number of clusters")
+plt.title("Effect of neighbourhood size on clustering")
 plt.legend()
 plt.tight_layout()
 plt.show()
+
+# ----------------------------
+# Note:
+# Pearson r measures linear correlation.
+# If the relationship is monotonic but not strictly linear,
+# Spearman rank correlation (rho) could be used instead.
+# ----------------------------
