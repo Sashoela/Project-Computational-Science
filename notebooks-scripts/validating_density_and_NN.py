@@ -104,7 +104,6 @@ def plot_density_vs_r1_inv3(r1: np.ndarray, rho: np.ndarray, outpath="figure5a_s
     ax.set_xlabel(r"average nearest neighbour distance$^{-3}$")
     ax.set_ylabel(r"density")
     ax.set_title(f"density vs NN distance$^{{-3}}$ (R$^2$={r2:.2f})")
-
     fig.tight_layout()
     fig.savefig(outpath, dpi=200)
     plt.show()
