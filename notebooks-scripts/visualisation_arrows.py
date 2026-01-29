@@ -17,7 +17,8 @@ class PyVistaViewer:
         self.sim = sim
         self.plotter = pv.Plotter()
         self.plotter.add_axes()
-        self.plotter.set_background("black")
+        self.plotter.set_background("white")
+        self.paused = False
 
         # --- Birds as arrows (glyphs) ---
         bird_positions = np.array([a.output_last()[:3] for a in sim.agents], dtype=float)
@@ -35,13 +36,19 @@ class PyVistaViewer:
             geom=self.arrow_src
         )
 
-        self.bird_actor = self.plotter.add_mesh(self.glyphs, color="white")
+        self.bird_actor = self.plotter.add_mesh(self.glyphs, color="black")
 
         # --- Predator ---
-        self.predator_mesh = pv.Sphere(radius=2.0)
+        self.predator_mesh = pv.Sphere(radius=0.5)
         self.predator_actor = self.plotter.add_mesh(self.predator_mesh, color="red")
         self.predator_actor.SetVisibility(False)
 
+        def toggle_pause():
+            self.paused = not self.paused
+            print("Paused" if self.paused else "Running")
+
+
+        self.plotter.add_key_event("p", toggle_pause)
         self.plotter.show(interactive_update=True)
 
     def update(self):
@@ -411,5 +418,11 @@ sim = Simulation(
 viewer = PyVistaViewer(sim)
 
 for _ in range(500):
-    sim.step()
-    viewer.update()
+    while True:
+        if not viewer.paused:
+            sim.step()
+            viewer.update()
+        else:
+            viewer.plotter.update()
+
+
