@@ -16,13 +16,20 @@ analysis, and results.
 
 ## File Structure
 .
-├── pyvisa/
 ├── notebooks-scripts/
 │ ├── agent_class.py
+│ ├── cluster_analysis.py
+│ ├── collect_data.py
+│ ├── simulation_class_copy.py
 │ ├── simulation_class.py
+│ ├── turbo_data_collector.py
+│ ├── validation_density_and_NN.py
 │ ├── validation_dens_aggr.py
+│ ├── validation_dimensions_ratios.py
+│ ├── visualisation_arrows.py
+│ ├── visualisation_spheres.py
 │ └── wall.py
-├── results/images
+├── results/images/data
 ├── requirements.txt
 └── README.md
 
@@ -36,32 +43,70 @@ No full simulations are run in this notebook.
 
 ---
 
-### `02_simulation.ipynb`
+### `cluster_analysis.py`
+XX
+- x
+
+---
+
+### `collect_data.py`
+XX
+- x
+
+---
+
+### `simulation_class.py` and `simulation_class_copy.py`
 Implements and runs the simulation:
 - Initialisation of bird populations
 - Time-stepping loop
-- Application of interaction rules
-- Visualisation of flock behaviour over time
+- Application of boid rules
+- predator movement
+- Visualisation of flock behaviour over time for test purposes
+- copy adds red dot for predator in test visualization
+---
+
+### `turbo_data_collector`
+XX
+- x
 
 ---
 
-### `04_analysis.ipynb`
-Analyses simulation outputs using statistical methods:
-*add later*
-
-Produces quantitative results and plots.
+### `validation_density_and_NN.py`
+XX
+- x
 
 ---
 
-### `05_results.ipynb`
-Presents and interprets the results:
-- Key figures and visualisations
-- Summary of observed behaviours
-- Discussion of findings in relation to literature
-
-This notebook focuses on interpretation rather than implementation.
+### `validation_dens_aggr.py`
+Validation checks if local density is the highest at the edge of the flock
+- runs x simulations for 150 steps, enough to settle
+- for each simulation calculate concave hull, then calculates distance to hull and local density for each agent
+- scatter plot of all data points is made with a fit of function a/x
 
 ---
 
-EVERYTHING ELSE TBA !
+### `validation_dimensions_ratios.py`
+XX
+- x
 
+---
+
+### `visualisation_arrows.py`
+XX
+- x
+
+---
+
+### `visualisation_spheres.py`
+XX
+- x
+
+---
+
+### `wall.py`
+Returnes vector away from "wall" when closer then 10
+- input = coordinate and output = vector (can be 0, 0, 0)
+
+---
+
+### results/images/data
