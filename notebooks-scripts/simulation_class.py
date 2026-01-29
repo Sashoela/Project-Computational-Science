@@ -17,7 +17,7 @@ class Simulation():
         coh_vector_scale, ali_vector_scale, sep_vector_scale, noise_vector_scale,
         pred_intro_time, pred_exit_time,
         *,
-        # ---- NEW: flock flattening params ----
+        #flock flattening params
         cluster_R=6.0,
         min_flock_size=25,
         flatten_strength=0.05,
@@ -34,7 +34,7 @@ class Simulation():
         self.pred_intro = pred_intro_time
         self.pred_exit_time = pred_exit_time
 
-        # NEW: flattening settings
+        #flattening settings
         self.cluster_R = float(cluster_R)
         self.min_flock_size = int(min_flock_size)
         self.flatten_strength = float(flatten_strength)
@@ -51,7 +51,7 @@ class Simulation():
                 unit_v[0], unit_v[1], unit_v[2]
             )
 
-    # ---------------- utilities (NEW small helpers) ----------------
+    #utilities
     @staticmethod
     def safe_unit(v, eps=1e-12):
         n = np.linalg.norm(v)
@@ -67,7 +67,7 @@ class Simulation():
         return np.array(P, dtype=float), ids
 
     def get_components(self, P, R):
-        """Connected components under distance threshold R (correct: compare to R^2)."""
+        """Connected components under distance threshold R"""
         N = len(P)
         R2 = R * R
         adj = [[] for _ in range(N)]
@@ -108,9 +108,7 @@ class Simulation():
         return com, normal
 
     def flatten_forces_by_flock(self, P, ids, comps):
-        """
-        Returns dict: bird_id -> flattening force (3,)
-        """
+       
         flat_forces = {}
         for comp in comps:
             if len(comp) < self.min_flock_size:
@@ -125,7 +123,7 @@ class Simulation():
                 flat_forces[bird_id] = (-dist * normal) * self.flatten_strength
         return flat_forces
 
-    # --- Boids Rules ---
+    # Boids Rules
     def cohesion(self, agent_index, neighbor_ids):
         if not neighbor_ids:
             return np.zeros(3)
@@ -162,7 +160,7 @@ class Simulation():
             k.append(z)
             ids.append(d)
 
-        # predator movement (unchanged)
+        # predator movement
         if self.timestep == self.pred_intro:
             self.predator = Predator()
         if self.timestep > self.pred_intro:
@@ -206,7 +204,7 @@ class Simulation():
                 movement = vector / np.linalg.norm(vector) * np.sqrt(2)
                 self.predator.update(predx + movement[0], predy + movement[1], predz + movement[2])
 
-        # NEW: compute flattening forces once per step (minimal extra work)
+        # computes flattening forces once per step
         P, ids2 = self.get_positions_and_ids()
         comps = self.get_components(P, self.cluster_R)
         flat_forces = self.flatten_forces_by_flock(P, ids2, comps)
@@ -251,7 +249,7 @@ class Simulation():
             wall = np.array(wall_vec(x, y, z, 5), dtype=np.float64)
             total_vec += wall
 
-            # NEW: add flattening force (0 if bird not in a big enough flock)
+            #flattening force (0 if bird not in a big enough flock)
             total_vec += flat_forces.get(id, np.array([0.0, 0.0, 0.0]))
 
             # final normalize
@@ -340,8 +338,6 @@ class Simulation():
             return np.array([0.0, 0.0, 0.0])
 
 
-<<<<<<< Updated upstream
-# ---------------- TEST CODE ----------------
 sim = Simulation(
     200, 7, 0.3, 0.3, 0.3, 0.1,
     10, 330,
@@ -353,31 +349,26 @@ sim = Simulation(
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
-=======
 ##### test code
 sim = Simulation(400, 7, 0.3, 0.3, 0.3, 0.1, 600, 600)
 plt.ion()
 fig = plt.figure()
 ax = fig.add_subplot(111, projection = "3d")
->>>>>>> Stashed changes
 ax.set_xlim(0, 100)
 ax.set_ylim(0, 100)
 ax.set_zlim(0, 100)
 ax.set_xlabel("x")
 ax.set_ylabel("y")
 ax.set_zlabel("z")
-<<<<<<< Updated upstream
 scat = ax.scatter([], [], [], s=5)
 
 for _ in range(330):
     sim.step()
     sim.show()
 
-=======
 scat = ax.scatter([], [], [], s = 5)
 for i in range(400):
     sim.step()
     sim.show()
->>>>>>> Stashed changes
 plt.ioff()
 plt.show()

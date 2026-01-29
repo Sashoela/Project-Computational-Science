@@ -1,3 +1,5 @@
+#runs simulations and outputs snapshots the data at wanted steps, outputs everything in different csv
+
 from simulation_class import Simulation
 import numpy as np
 
@@ -14,8 +16,7 @@ def get_coordinates_at_steps(
     sample_steps,
 ):
     """
-    Run ONE simulation and return snapshots at the requested timesteps.
-    Returns: dict {step: np.array([[id,x,y,z], ...])}
+    Run simulation and return snapshots at the requested timesteps.
     """
     sim = Simulation(
         N_birds,
@@ -32,8 +33,6 @@ def get_coordinates_at_steps(
     snapshots = {s: None for s in sample_steps}
     max_step = max(sample_steps)
 
-    # step index here matches what YOU want to label as "step"
-    # (i.e., after calling sim.step() we treat it as that step count)
     for step in range(1, max_step + 1):
         sim.step()
 
@@ -44,17 +43,12 @@ def get_coordinates_at_steps(
 
     return snapshots
 
-
-"""
-Run for a range of neighbourhood sizes, repeat runs,
-save coordinate snapshots at multiple steps into ONE CSV with a step column.
-"""
 rows_save = []
 
 N_RUNS = 12
 SAMPLE_STEPS = [301, 311, 321]
 
-# parameters you had
+# parameters
 N_BIRDS = 200
 COH = 0.3
 ALI = 0.3
