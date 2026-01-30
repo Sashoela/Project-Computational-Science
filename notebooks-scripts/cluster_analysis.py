@@ -15,34 +15,39 @@ from sklearn.preprocessing import StandardScaler
 df = pd.read_csv("final_positions_multi_step.csv")
 
 results = []
+steps = [301, 311, 321]
 
-for x in sorted(df["nearest_x"].unique()):
-    print(f"Processing nearest_x = {x}")
-    for run in sorted(df["run"].unique()):
-        subset = df[
-            (df["nearest_x"] == x) &
-            (df["run"] == run)
-        ]
-
-        if len(subset) < 3:
-            continue
-
-        X = subset[["x", "y", "z"]].values
-        X = StandardScaler().fit_transform(X)
-
-        db = DBSCAN(eps=0.8, min_samples=3).fit(X)
-        labels = db.labels_
-
-        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-        n_noise = np.sum(labels == -1)
-
-        results.append({
-            "nearest_x": x,
-            "run": run,
-            "step": step,
-            "n_clusters": n_clusters,
-            "n_noise": n_noise
-        })
+for step in steps: 
+    print(f"Processing step = {step}")
+    for x in sorted(df["nearest_x"].unique()):
+        print(f"Processing nearest_x = {x}")
+        for run in sorted(df["run"].unique()):
+            
+            subset = df[
+                (df["step"] == step) &
+                (df["nearest_x"] == x) &
+                (df["run"] == run)
+            ]
+    
+            if len(subset) < 3:
+                continue
+    
+            X = subset[["x", "y", "z"]].values
+            X = StandardScaler().fit_transform(X)
+    
+            db = DBSCAN(eps=0.152, min_samples=3).fit(X)
+            labels = db.labels_
+    
+            n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+            n_noise = np.sum(labels == -1)
+    
+            results.append({
+                "nearest_x": x,
+                "run": run,
+                "step": step,
+                "n_clusters": n_clusters,
+                "n_noise": n_noise
+            })
 
 results_df = pd.DataFrame(results)
 results_df.to_csv("dbscan_cluster_distributions_multi_step.csv", index=False)
@@ -88,5 +93,25 @@ df.columns = df.columns.str.strip()
 
 # plt.show()
 
+### for mutiple run, mutiple snapshots
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
+
+for ax, step in zip(axes, steps):
+    subset = results_df[results_df["step"] == step]
+
+    subset.boxplot(
+        column="n_clusters",
+        by="nearest_x",
+        ax=ax,
+        grid=False
+    )
+
+    ax.set_title(f"Step {int(step)}")
+    ax.set_xlabel("nearest_x")
+    ax.set_ylabel("number of clusters")
+
+plt.suptitle("Cluster distribution at step 301, 311, 321")
+plt.show()
 
 
