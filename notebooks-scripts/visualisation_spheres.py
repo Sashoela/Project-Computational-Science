@@ -1,63 +1,93 @@
 # import libraries
-import math
 import random
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import pyvista as pv
 
 # import our own functions
 from agent_class import Agent, Predator
 from wall import wall_vec
 
+"""
+3D Visualisation of the flock using PyVista.
 
+Birds are represented as points rendered as small spheres.
+The predator, when present, is visualised as a red sphere.
+"""
 
 # --- PyVista Viewer ---
 class PyVistaViewer:
     def __init__(self, sim):
         self.sim = sim
+
+        # Creating a PyVista plotter for interactive visualisation
         self.plotter = pv.Plotter()
         self.plotter.add_axes()
         self.plotter.set_background("white")
+
+        # Pause flag (for screenshots)
         self.paused = False
 
 
         # Birds
+
+        # Extract initial bird positions from the simulation
         positions = np.array([agent.output_last()[:3] for agent in sim.agents])
+
+        # Create a point cloud representing bird positions
         self.cloud = pv.PolyData(positions)
+         # Add birds to the plot as small spheres
         self.actor = self.plotter.add_points(
             self.cloud, render_points_as_spheres=True, point_size=6, color="black"
         )
 
         # Predator
+
+        # Predator visualised as a red sphere
         self.predator_mesh = pv.Sphere(radius=0.5     )
         self.predator_actor = self.plotter.add_mesh(self.predator_mesh, color="red")
+
+        # Predator hidden by default
         self.predator_actor.SetVisibility(False)
 
+        # Toggle pause state with key 'p'
         def toggle_pause():
             self.paused = not self.paused
             print("Paused" if self.paused else "Running")
 
 
         self.plotter.add_key_event("p", toggle_pause)
+
+        #Show interactive window 
         self.plotter.show(interactive_update=True)
     
 
     def update(self):
+        """
+        Updates positions 
+        """
+
         # Birds
+
+        #Update bird positions 
         positions = np.array([agent.output_last()[:3] for agent in self.sim.agents])
+
+        #Update point cloud data 
         self.cloud.points = positions
 
+        #Update predator 
         predator_exists = hasattr(self.sim, "predator") and (self.sim.predator is not None)
         predator_in_window = (self.sim.pred_intro <= self.sim.timestep <= self.sim.pred_exit_time)
 
         if predator_exists and predator_in_window:
+            #Update predator position if active 
             x, y, z = self.sim.predator.info()
             self.predator_actor.SetPosition(x, y, z)
             self.predator_actor.SetVisibility(True)
         else:
+            #Hide predator when inactive
             self.predator_actor.SetVisibility(False)
 
+        #Render
         self.plotter.update()
 
 class Simulation():
@@ -318,25 +348,6 @@ class Simulation():
 
         for agent in self.agents:
             agent.current_to_last()
-
-    def show(self):
-        i, j, k = [], [], []
-        for agent in self.agents:
-            x, y, z, vx, vy, vz, id = agent.output_last()
-            i.append(x)
-            j.append(y)
-            k.append(z)
-
-        if self.timestep > self.pred_intro:
-            x, y, z = self.predator.info()
-            i.append(x)
-            j.append(y)
-            k.append(z)
-            print(x, y, z)
-
-        scat._offsets3d = (i, j, k)
-        fig.canvas.draw_idle()
-        plt.pause(0.05)
 
     def dump(self):
         i, j, k = [], [], []
