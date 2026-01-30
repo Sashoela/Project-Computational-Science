@@ -76,8 +76,11 @@ This file runs the flocking simulation multiple times.
 ---
 
 ### `validation_density_and_NN.py`
-XX
-- x
+This file checks for the density and nearest neighbour within a simulation
+- runs a simulation for 1200 steps and records density and average nearest neighbours of the birds ever 10 steps 
+- these data points are recorded after 200 steps, once the the flock has 'settled'
+- produces a graph to display the relationship
+- Calculates the R^2 
 
 ---
 
@@ -98,14 +101,16 @@ This is validation of flocks dimensions and it is done by finding out their rati
 ---
 
 ### `visualisation_arrows.py`
-XX
-- x
+Pyvista file that adds a mesh to the simulation
+- This file in particular uses arrow mesh to represent the agents velocities.
+- The predator is represented by a red sphere 
 
 ---
 
 ### `visualisation_spheres.py`
-XX
-- x
+Pyvista file that adds a mesh to the simulation
+- This file in particular adds a sphere mesh to the agents 
+- Predator is represented by a red sphere 
 
 ---
 
