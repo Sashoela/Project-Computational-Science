@@ -1,6 +1,9 @@
 """
 Determine clusters present post predator interaction
 Visualise cluster distribution using box plots
+Supports mutiple box plot graphing options (for single run, over mutiple run with one snapshot, over multiple run AND snapshot)
+Please comment out the graphing code accordingly 
+Is defaulted to reproduced graph we used on the poster
 """
 
 import numpy as np
@@ -9,7 +12,7 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 
-df = pd.read_csv("final_positions_multi_step_sasha_1.csv")
+df = pd.read_csv("final_positions_multi_step.csv")
 
 results = []
 
@@ -42,33 +45,12 @@ for x in sorted(df["nearest_x"].unique()):
         })
 
 results_df = pd.DataFrame(results)
-results_df.to_csv("dbscan_cluster_distributions_multi_step_sasha_1.csv", index=False)
+results_df.to_csv("dbscan_cluster_distributions_multi_step.csv", index=False)
 
 print(results_df.head())
 
-df = pd.read_csv("final_positions_multi_step_sasha_1.csv")
+df = pd.read_csv("final_positions_multi_step.csv")
 df.columns = df.columns.str.strip()
-
-
-# add box plot
-plt.figure(figsize=(8, 5))
-
-results_df.boxplot(
-    column="n_clusters",
-    by="nearest_x",
-    grid=False
-)
-
-plt.savefig("cluster_boxplot.png", dpi=300)
-
-plt.xlabel("Nearest N")
-plt.ylabel("Number of clusters")
-plt.title("Cluster counts post-predator")
-plt.suptitle("")
-
-plt.savefig("cluster_boxplot.png", dpi=300)
-
-plt.show()
 
 #### Bar plot to check single run 
 
@@ -85,3 +67,26 @@ plt.show()
 
 # plt.tight_layout()
 # plt.show()
+
+# To produced cluster analysis of three t= snapshots
+
+### add box plot for multiple run, single snapshot
+# plt.figure(figsize=(8, 5))
+
+# results_df.boxplot(
+#     column="n_clusters",
+#     by="nearest_k",
+#     grid=False
+# )
+
+# plt.xlabel("Nearest N")
+# plt.ylabel("Number of clusters")
+# plt.title("Cluster counts post-predator")
+# plt.suptitle("")
+
+# plt.savefig("cluster_boxplot.png", dpi=300)
+
+# plt.show()
+
+
+
