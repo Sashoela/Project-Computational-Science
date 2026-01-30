@@ -112,6 +112,8 @@ for ax, step in zip(axes, steps):
     ax.set_ylabel("number of clusters")
 
 plt.suptitle("Cluster distribution at step 301, 311, 321")
+plt.savefig("cluster_boxplot.png", dpi=300)
 plt.show()
+
 
 
