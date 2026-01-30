@@ -119,7 +119,12 @@ Returnes vector away from "wall" when closer then 10
 - input = coordinate and output = vector (can be 0, 0, 0)
 
 ---
-
+### `linear_association.py`
+Returnes Pearson r and p-value between cluster count across runs and nearest neighbour size
+- input = csv file of simulation result
+- default input = "final_positions_multi_step.csv"
+- ouputs "linear_assoc.png"
+  
 ### results/images/data
 
 ### `cluster_boxplot_step (301,311,321).png` 
@@ -155,7 +160,7 @@ This file stores bird positions at selected timesteps.
 ---
 
 ### `final_positions.csv`
-XX
-- x
+Older dataset before implementing center attraction in simulation
+- used to produce cluster box graph in final report appendix A.2
 
 ---
