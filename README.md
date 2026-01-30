@@ -44,15 +44,18 @@ No full simulations are run in this notebook.
 ---
 
 ### `cluster_analysis.py`
-XX
-- x
+This script identifies clusters after the predator interaction.
+- It uses DBSCAN to count how many clusters form for each neighbourhood size.
+- The results are compared across runs.
+- It saves a CSV file with cluster counts and a box plot showing the cluster distribution for each nearest_x.
 
 ---
 
 ### `collect_data.py`
-XX
-- x
-
+This file runs the simulation many times and print out the results athe last step.
+- It changes nearest_x from 2 to 11 and repeats each setting 30 times.
+- After 601 steps it saves the final  (x,y,z) position of every bird.
+- It writes final_positions.csv with columns nearest_x, run, agent_id, x, y, z for DBSCAN analysis.
 ---
 
 ### `simulation_class.py` and `simulation_class_copy.py`
@@ -66,9 +69,10 @@ Implements and runs the simulation:
 ---
 
 ### `turbo_data_collector`
-XX
-- x
-
+This file runs the flocking simulation multiple times.
+- It changes the interaction range (nearest_x) and repeats each run several times.
+- At selected timesteps, it saves the positions of all birds.
+- The output is a CSV file containing bird positions (x,y,z) for each run, timestep, and number of nearest neighbours.
 ---
 
 ### `validation_density_and_NN.py`
@@ -86,9 +90,11 @@ Validation checks if local density is the highest at the edge of the flock
 ---
 
 ### `validation_dimensions_ratios.py`
-XX
-- x
-
+This is validation of flocks dimensions and it is done by finding out their ratios confidence intervals.
+- Simulations are run and the flock shape is described by three dimensions I1<I2<I3.
+- These are computed from the spatial extent of the flock along its principal axes.
+- The ratios I3/I1 and I2/I1 measure how thin the flock is.
+- The ratios are calculated only when the flock is not turning, and the code outputs their mean values with 95% confidence intervals.
 ---
 
 ### `visualisation_arrows.py`
