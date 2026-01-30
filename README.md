@@ -116,3 +116,41 @@ Returnes vector away from "wall" when closer then 10
 ---
 
 ### results/images/data
+
+### `cluster_boxplot_step (301,311,321).png` 
+These box plots show the distribution of the number of clusters across runs.
+- Each box corresponds to a different nearest_x value.
+- Steps 301, 311, and 321 are plotted separately to compare cluster stability over time.
+
+---
+
+### `dbscan_cluster_distributions_multi_step.csv` / `dbscan_cluster_distributions_multi_step_sasha_1.csv`
+This file stores the results of the DBSCAN clustering analysis.
+- Each row corresponds to one simulation run at a given timestep and neighbourhood size.
+
+---
+
+### `density_validation.png`
+XX
+- x
+
+---
+
+### `density_vs_r1_inv3.png`
+XX
+- x
+
+---
+
+### `final_positions_multi_step.csv` / `final_positions_multi_step_sasha_1.csv`
+This file stores bird positions at selected timesteps.
+- Each row corresponds to one bird in one simulation run.
+- The data is used to analyse flock structure and clustering over time.
+
+---
+
+### `final_positions.csv`
+XX
+- x
+
+---
