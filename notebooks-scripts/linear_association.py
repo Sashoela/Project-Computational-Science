@@ -1,5 +1,5 @@
 """
-Find linear association between avg cluster count and k (immediate neighbours responded to)
+Find linear association between cluster count and k (immediate neighbours responded to)
 returns Pearson r and p-value
 Plots decriptive! trendline
 """
@@ -11,29 +11,25 @@ import matplotlib.pyplot as plt
 
 df = pd.read_csv("dbscan_cluster_distributions_multi_step.csv")
 
-avg_clusters = (df.groupby("nearest_x")["n_clusters"].mean().reset_index())
-
-r, p = pearsonr(
-    avg_clusters["nearest_x"],
-    avg_clusters["n_clusters"]
-)
+r, p = pearsonr(df["nearest_x"], df["n_clusters"])
 
 # descriptive trendline
-coeffs = np.polyfit(avg_clusters["nearest_x"], avg_clusters["n_clusters"], 1)
+coeffs = np.polyfit(df["nearest_x"], df["n_clusters"], 1)
 trendline = np.poly1d(coeffs)
 
 # plot scatter and descriptive trendline
 x = np.linspace(
-    avg_clusters["nearest_x"].min(),
-    avg_clusters["nearest_x"].max(),
+    df["nearest_x"].min(),
+    df["nearest_x"].max(),
     100
+
 )
 
 plt.figure(figsize=(7, 5))
 
 plt.scatter(
-    avg_clusters["nearest_x"],
-    avg_clusters["n_clusters"],
+    df["nearest_x"],
+    df["n_clusters"],
     label="Mean clusters"
 )
 
@@ -55,5 +51,5 @@ plt.text(
 )
 
 plt.legend()
-plt.savefig("pearson_r_avg_clusters.png", dpi=300)
+plt.savefig("linear_association_plot.png", dpi=300)
 plt.show()
