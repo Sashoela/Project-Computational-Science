@@ -1,32 +1,42 @@
 # import libraries
-import math
 import random
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import pyvista as pv
 
 # import our own functions
 from agent_class import Agent, Predator
 from wall import wall_vec
 
+"""
+3D Visualisation of the flock using Pyvista. 
 
+Birds are represented as oriented arrows(glyphs). The predator is represented by a visualised red sphere
+"""
 
 class PyVistaViewer:
     def __init__(self, sim):
         self.sim = sim
+
+        #creating a Pyvista plotter for interactive visualisation 
         self.plotter = pv.Plotter()
         self.plotter.add_axes()
         self.plotter.set_background("white")
+
+        #Pause flag is added for screenshots 
         self.paused = False
 
         # --- Birds as arrows (glyphs) ---
+
+        #extracting positions and velocities 
         bird_positions = np.array([a.output_last()[:3] for a in sim.agents], dtype=float)
         bird_velocities = np.array([a.output_last()[3:6] for a in sim.agents], dtype=float)
 
+        #Creating a point cloud represetning bird positions 
         self.cloud = pv.PolyData(bird_positions)
+        #Attaching respective velocities 
         self.cloud["vel"] = bird_velocities
 
+        #Adding an arrow mesh 
         self.arrow_src = pv.Arrow()
 
         # initialising cloud of glyphs
@@ -36,30 +46,44 @@ class PyVistaViewer:
             geom=self.arrow_src
         )
 
+        #adding birds to the plot 
         self.bird_actor = self.plotter.add_mesh(self.glyphs, color="black")
 
         # --- Predator ---
+
+        #Predator visualised as a red sphere 
         self.predator_mesh = pv.Sphere(radius=0.5)
         self.predator_actor = self.plotter.add_mesh(self.predator_mesh, color="red")
+        #Predator hidden by default 
         self.predator_actor.SetVisibility(False)
 
+        #adding a pause toggle with key 'p'
         def toggle_pause():
             self.paused = not self.paused
             print("Paused" if self.paused else "Running")
 
 
         self.plotter.add_key_event("p", toggle_pause)
+
+        #show interactive window 
         self.plotter.show(interactive_update=True)
 
     def update(self):
+        """
+        Updates the visualisation.
+        """
+
+        #Update bird positions and velocities 
         bird_positions = np.array([a.output_last()[:3] for a in self.sim.agents], dtype=float)
         bird_velocities = np.array([a.output_last()[3:6] for a in self.sim.agents], dtype=float)
 
+        #Update point cloud data 
         self.cloud.points = bird_positions
         self.cloud["vel"] = bird_velocities
 
+        #Recomputing glyphs to update arrow orienation
         self.glyphs = self.cloud.glyph(orient="vel", scale=False, geom=self.arrow_src)
-
+        #Update bird actor with new glyph data 
         self.bird_actor.mapper.SetInputData(self.glyphs)
 
         # Predator
@@ -67,12 +91,15 @@ class PyVistaViewer:
         predator_active = (self.sim.timestep >= self.sim.pred_intro) and (self.sim.timestep <= self.sim.pred_exit_time)
 
         if predator_exists and predator_active:
+            #update predator if active
             x, y, z = self.sim.predator.info()
             self.predator_actor.SetPosition(x, y, z)
             self.predator_actor.SetVisibility(True)
         else:
+            #Hide predator if inactive 
             self.predator_actor.SetVisibility(False)
 
+        #Render 
         self.plotter.update()
 
 
@@ -336,25 +363,6 @@ class Simulation():
 
         for agent in self.agents:
             agent.current_to_last()
-
-    def show(self):
-        i, j, k = [], [], []
-        for agent in self.agents:
-            x, y, z, vx, vy, vz, id = agent.output_last()
-            i.append(x)
-            j.append(y)
-            k.append(z)
-
-        if self.timestep > self.pred_intro:
-            x, y, z = self.predator.info()
-            i.append(x)
-            j.append(y)
-            k.append(z)
-            print(x, y, z)
-
-        scat._offsets3d = (i, j, k)
-        fig.canvas.draw_idle()
-        plt.pause(0.05)
 
     def dump(self):
         i, j, k = [], [], []
